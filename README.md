@@ -153,9 +153,9 @@ Este projeto foi desenvolvido com dedicação por:
 | [<img src="https://avatars.githubusercontent.com/u/200134059?v=4" width=115><br><sub>Ismael Gomes (Rex)</sub>](https://github.com/Rex23jsl) | [<img src="https://avatars.githubusercontent.com/u/202681925?v=4" width=115><br><sub>Eduardo Monteiro</sub>](https://github.com/eduardominhom) |
 | :---: | :---: |
 | [GitHub](https://github.com/Rex23js) <br/> | [GitHub](https://github.com/eduardominhom) 
-</div>
----
 
+---
+</div>
 ## 📄 Licença
 
 Este projeto está sob a licença MIT. Veja o arquivo [LICENSE](LICENSE) para mais detalhes.
