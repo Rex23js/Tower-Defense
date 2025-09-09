@@ -152,7 +152,7 @@ Este projeto foi desenvolvido com dedicação por:
 
 | [<img src="https://avatars.githubusercontent.com/u/[ID_DO_ISMAEL]?v=4" width=115><br><sub>Ismael Gomes (Rex)</sub>](https://github.com/seu-usuario-ismael) | [<img src="https://avatars.githubusercontent.com/u/[ID_DO_EDUARDO]?v=4" width=115><br><sub>Eduardo Monteiro</sub>](https://github.com/seu-usuario-eduardo) |
 | :---: | :---: |
-| [GitHub](https://github.com/seu-usuario-ismael) <br/> [LinkedIn](https://www.linkedin.com/in/seu-linkedin-ismael/) | [GitHub](https://github.com/seu-usuario-eduardo) <br/> [LinkedIn](https://www.linkedin.com/in/seu-linkedin-eduardo/) |
+| [GitHub](https://github.com/Rex23js) <br/> [GitHub](https://github.com/seu-usuario-eduardo) <br/> [LinkedIn]
 
 ---
 
