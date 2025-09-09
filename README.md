@@ -150,9 +150,9 @@ Contribuições são sempre bem-vindas! Se você tem ideias para melhorar o proj
 
 Este projeto foi desenvolvido com dedicação por:
 
-| [<img src="https://avatars.githubusercontent.com/u/[ID_DO_ISMAEL]?v=4" width=115><br><sub>Ismael Gomes (Rex)</sub>](https://github.com/seu-usuario-ismael) | [<img src="https://avatars.githubusercontent.com/u/[ID_DO_EDUARDO]?v=4" width=115><br><sub>Eduardo Monteiro</sub>](https://github.com/seu-usuario-eduardo) |
+| [<img src="https://avatars.githubusercontent.com/u/200134059?v=4" width=115><br><sub>Ismael Gomes (Rex)</sub>](https://github.com/Rex23jsl) | [<img src="https://avatars.githubusercontent.com/u/202681925?v=4" width=115><br><sub>Eduardo Monteiro</sub>](https://github.com/eduardominhom) |
 | :---: | :---: |
-| [GitHub](https://github.com/Rex23js) <br/> [GitHub](https://github.com/seu-usuario-eduardo) <br/> [LinkedIn]
+| [GitHub](https://github.com/Rex23js) <br/> [LinkedIn](https://www.linkedin.com/in/seu-linkedin-ismael/) | [GitHub](https://github.com/seu-usuario-eduardo) <br/> [LinkedIn](https://www.linkedin.com/in/seu-linkedin-eduardo/) |
 
 ---
 
@@ -163,4 +163,4 @@ Este projeto está sob a licença MIT. Veja o arquivo [LICENSE](LICENSE) para ma
 ---
 <div align="center">
   <p>Feito com ❤️ e muito café☕!</p>
-</div># Tower-Defense
+</div>
