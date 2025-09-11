@@ -1,0 +1,77 @@
+:root {
+  --bg: #0f1724;
+  --panel: #111827;
+  --accent: #7c3aed;
+  --text: #e6edf3;
+}
+* {
+  box-sizing: border-box;
+}
+html,
+body {
+  height: 100%;
+  margin: 0;
+  font-family: Inter, Arial;
+  background: var(--bg);
+  color: var(--text);
+}
+.site-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 20px;
+  background: rgba(0, 0, 0, 0.2);
+}
+.site-header h1 {
+  margin: 0;
+  font-size: 1.2rem;
+}
+nav button {
+  margin-left: 8px;
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  padding: 6px 10px;
+  color: var(--text);
+  border-radius: 6px;
+  cursor: pointer;
+}
+nav button:hover {
+  background: rgba(255, 255, 255, 0.02);
+}
+.game-view {
+  display: grid;
+  grid-template-columns: 260px 1fr;
+  gap: 12px;
+  padding: 12px;
+}
+.shop {
+  background: var(--panel);
+  padding: 12px;
+  border-radius: 8px;
+  height: 640px;
+  overflow: auto;
+}
+.game-area {
+  background: #081226;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+canvas {
+  background: transparent;
+  max-width: 100%;
+  height: auto;
+  border: 1px solid rgba(255, 255, 255, 0.03);
+}
+.hud {
+  position: fixed;
+  right: 16px;
+  top: 70px;
+  background: rgba(0, 0, 0, 0.3);
+  padding: 8px;
+  border-radius: 6px;
+}
+button:focus {
+  outline: 3px solid #ffd166;
+}

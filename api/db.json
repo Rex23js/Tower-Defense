@@ -1,0 +1,7 @@
+{
+  "waves": [
+    { "id": 1, "enemies": [{ "type": "basic", "count": 6 }], "goldReward": 50 },
+    { "id": 2, "enemies": [{ "type": "fast", "count": 8 }], "goldReward": 80 }
+  ],
+  "scores": [{ "id": 1, "player": "Rex", "score": 4520 }]
+}
