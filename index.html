@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Tower Defense - Projeto Acadêmico</title>
+    <link rel="stylesheet" href="css/style.css" />
+  </head>
+  <body>
+    <header class="site-header" role="banner">
+      <div class="header-inner">
+        <div class="brand"><span class="logo">Tower Defense</span></div>
+        <nav class="main-nav" role="navigation" aria-label="Menu principal">
+          <button class="nav-btn" data-link="#/">Home</button>
+          <button class="nav-btn" data-link="#/scores">Pontuações</button>
+          <button class="nav-btn" data-link="#/docs">Docs</button>
+        </nav>
+      </div>
+    </header>
+
+    <main id="app" role="main" tabindex="-1"></main>
+
+    <!-- HOME -->
+    <template id="view-home">
+      <section class="page home-page">
+        <div class="hero">
+          <h1 class="hero-title">Defenda sua base</h1>
+          <p class="hero-sub">Coloque torres, lute contra ondas de inimigos</p>
+          <div class="hero-cta">
+            <button id="btn-play" class="primary" data-link="#/game">
+              JOGAR AGORA
+            </button>
+          </div>
+        </div>
+      </section>
+    </template>
+
+    <!-- GAME -->
+    <template id="view-game">
+      <section class="page game-page">
+        <div class="game-wrap">
+          <aside class="shop" aria-label="Loja de Torres" role="region">
+            <h3>Tower Shop</h3>
+            <div class="shop-items" id="shop-items"></div>
+            <div class="shop-actions">
+              <button id="btn-buy" class="secondary">BUY</button>
+            </div>
+          </aside>
+
+          <div class="game-area">
+            <div class="game-topbar">
+              <div class="hud-inline" role="status" aria-live="polite">
+                <span id="gold">Ouro: 0</span>
+                <span id="lives">Vidas: 20</span>
+                <span id="wave">Wave: 0</span>
+              </div>
+              <div class="controls-inline">
+                <button id="btn-start-wave" class="secondary">
+                  Iniciar Wave
+                </button>
+                <button id="btn-pause" class="secondary">Pausa</button>
+              </div>
+            </div>
+
+            <div
+              class="canvas-wrap"
+              role="application"
+              aria-label="Área de jogo"
+            >
+              <canvas
+                id="game-canvas"
+                width="960"
+                height="640"
+                tabindex="0"
+                aria-label="Canvas do jogo"
+              ></canvas>
+            </div>
+          </div>
+        </div>
+      </section>
+    </template>
+
+    <!-- SCORES -->
+    <template id="view-scores">
+      <section class="page scores-page">
+        <h2>Ranking de Pontuação</h2>
+        <div class="scores-box">
+          <div id="scores-list">Loading...</div>
+        </div>
+      </section>
+    </template>
+
+    <!-- DOCS -->
+    <template id="view-docs">
+      <section class="page docs-page">
+        <h2>Documentação do Projeto</h2>
+        <article class="doc-block">
+          <p>
+            Leia o README no repositório para instruções completas, cronograma e
+            wireframes.
+          </p>
+        </article>
+        <article class="doc-block">
+          <p>Wireframes e especificações de UI estão em /docs/wireframes/.</p>
+        </article>
+      </section>
+    </template>
+
+    <footer class="site-footer" role="contentinfo">
+      <div class="footer-inner">Projeto acadêmico — 2025</div>
+    </footer>
+
+    <script type="module" src="js/main.js"></script>
+  </body>
+</html>
