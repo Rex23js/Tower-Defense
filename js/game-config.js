@@ -63,11 +63,11 @@ export const GAME_CONFIG = {
     sniper: {
       cost: 80,
       range: 260,
-      fireRate: 0.5,
+      fireRate: 0.5, // Corrigido: sniper deveria ter fireRate baixo
       damage: 12,
       color: "#f97316",
       name: "Sniper",
-      description: "Dano alto. Cadência baixa.",
+      description: "Dano alto. Longo alcance. Cadência baixa.",
     },
     rapid: {
       cost: 60,
@@ -77,6 +77,15 @@ export const GAME_CONFIG = {
       color: "#10b981",
       name: "Torre Rápida",
       description: "Dano baixo. Cadência alta.",
+    },
+    laser: {
+      cost: 120,
+      range: 180,
+      fireRate: 1.8,
+      damage: 8,
+      color: "#a855f7",
+      name: "Torre Laser",
+      description: "Tecnologia avançada. Dano perfurante.",
     },
   },
 

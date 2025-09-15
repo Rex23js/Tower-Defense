@@ -1,6 +1,7 @@
 // js/engine.js
 import { getWaves } from "./api.js";
 import { WaveManager } from "./wave-manager.js";
+import { Enemy, Tower } from "./entities.js";
 import { GAME_CONFIG } from "./game-config.js";
 
 export let GameAPI = null;
@@ -93,127 +94,6 @@ function distanceToPath(point, pathPoints) {
     if (d < best) best = d;
   }
   return best;
-}
-
-// ---- entidades (mantive suas classes locais como estavam) ----
-class Enemy {
-  constructor(type, startDistance, pathObj) {
-    this.type = type;
-    this.dist = startDistance;
-    this.pathObj = pathObj;
-    this.dead = false;
-    this.size = GAME_CONFIG.enemyTypes[type]?.size || 18;
-    const cfg = GAME_CONFIG.enemyTypes[type] || GAME_CONFIG.enemyTypes.basic;
-    this.speed = cfg.speed;
-    this.hp = cfg.hp;
-    this.maxHp = cfg.hp;
-    this.color = cfg.color;
-    this.goldValue = cfg.goldValue || GAME_CONFIG.goldPerKill;
-    this.x = 0;
-    this.y = 0;
-    const p = samplePointAtDistance(this.pathObj, this.dist);
-    this.x = p.x;
-    this.y = p.y;
-  }
-
-  update(dt) {
-    this.dist -= this.speed * dt;
-    if (this.dist <= 0) {
-      this.dead = true;
-      return "reached_base";
-    }
-    const p = samplePointAtDistance(this.pathObj, this.dist);
-    this.x = p.x;
-    this.y = p.y;
-    return null;
-  }
-
-  takeDamage(dmg) {
-    this.hp -= dmg;
-    if (this.hp <= 0) {
-      this.dead = true;
-      return true;
-    }
-    return false;
-  }
-
-  draw(ctx) {
-    ctx.fillStyle = this.color;
-    ctx.fillRect(
-      this.x - this.size / 2,
-      this.y - this.size / 2,
-      this.size,
-      this.size
-    );
-
-    // HP bar
-    ctx.fillStyle = "rgba(0,0,0,0.35)";
-    ctx.fillRect(
-      this.x - this.size / 2,
-      this.y - this.size / 2 - 6,
-      this.size,
-      4
-    );
-    ctx.fillStyle = this.hp > this.maxHp * 0.3 ? "#10b981" : "#ef4444";
-    const hpW = Math.max(0, (this.hp / this.maxHp) * this.size);
-    ctx.fillRect(this.x - this.size / 2, this.y - this.size / 2 - 6, hpW, 4);
-  }
-}
-
-class Tower {
-  constructor(x, y, opts = {}) {
-    this.x = x;
-    this.y = y;
-    this.range = opts.range || 120;
-    this.fireRate = opts.fireRate || 1;
-    this.damage = opts.damage || 4;
-    this.cooldown = 0;
-    this.color = opts.color || "#60a5fa";
-    this.size = 20;
-  }
-
-  update(dt, state) {
-    this.cooldown -= dt;
-    if (this.cooldown <= 0) {
-      const target = this.findTarget(state.enemies);
-      if (target) {
-        const killed = target.takeDamage(this.damage);
-        this.cooldown = 1 / this.fireRate;
-        if (killed) {
-          state.gold += target.goldValue || GAME_CONFIG.goldPerKill;
-        }
-      }
-    }
-  }
-
-  findTarget(enemies) {
-    let best = null;
-    let bestD = Infinity;
-    for (const e of enemies) {
-      const d = Math.hypot(e.x - this.x, e.y - this.y);
-      if (d <= this.range && d < bestD) {
-        bestD = d;
-        best = e;
-      }
-    }
-    return best;
-  }
-
-  draw(ctx) {
-    ctx.fillStyle = this.color;
-    ctx.fillRect(
-      this.x - this.size / 2,
-      this.y - this.size / 2,
-      this.size,
-      this.size
-    );
-    ctx.beginPath();
-    ctx.setLineDash([4, 6]);
-    ctx.arc(this.x, this.y, this.range, 0, Math.PI * 2);
-    ctx.strokeStyle = "rgba(255,255,255,0.03)";
-    ctx.stroke();
-    ctx.setLineDash([]);
-  }
 }
 
 // ---- engine (init) ----
@@ -319,32 +199,9 @@ export async function initEngine(canvas) {
   // Public API para UI
   GameAPI = {
     placeTowerAt: (x, y, type) => {
-      const templates = {
-        basic: {
-          cost: GAME_CONFIG.towerTypes.basic.cost,
-          range: GAME_CONFIG.towerTypes.basic.range,
-          fireRate: GAME_CONFIG.towerTypes.basic.fireRate,
-          damage: GAME_CONFIG.towerTypes.basic.damage,
-          color: GAME_CONFIG.towerTypes.basic.color,
-        },
-        sniper: {
-          cost: GAME_CONFIG.towerTypes.sniper.cost,
-          range: GAME_CONFIG.towerTypes.sniper.range,
-          fireRate: GAME_CONFIG.towerTypes.sniper.fireRate,
-          damage: GAME_CONFIG.towerTypes.sniper.damage,
-          color: GAME_CONFIG.towerTypes.sniper.color,
-        },
-        rapid: {
-          cost: GAME_CONFIG.towerTypes.rapid.cost,
-          range: GAME_CONFIG.towerTypes.rapid.range,
-          fireRate: GAME_CONFIG.towerTypes.rapid.fireRate,
-          damage: GAME_CONFIG.towerTypes.rapid.damage,
-          color: GAME_CONFIG.towerTypes.rapid.color,
-        },
-      };
-      const tpl = templates[type];
-      if (!tpl) return { ok: false, reason: "tipo inválido" };
-      if (state.gold < tpl.cost)
+      const towerConfig = GAME_CONFIG.towerTypes[type];
+      if (!towerConfig) return { ok: false, reason: "tipo inválido" };
+      if (state.gold < towerConfig.cost)
         return { ok: false, reason: "ouro insuficiente" };
 
       // impede construir sobre o base box
@@ -361,8 +218,8 @@ export async function initEngine(canvas) {
       if (dToPath < PATH_RADIUS_BLOCK)
         return { ok: false, reason: "não pode construir no caminho" };
 
-      state.gold -= tpl.cost;
-      state.towers.push(new Tower(x, y, tpl));
+      state.gold -= towerConfig.cost;
+      state.towers.push(new Tower(x, y, type));
       return { ok: true };
     },
 
@@ -390,25 +247,49 @@ export async function initEngine(canvas) {
       {
         id: 1,
         enemies: [
-          { type: "basic", count: 8 },
-          { type: "fast", count: 4 },
+          { type: "basic", count: 6 },
+          { type: "fast", count: 2 },
         ],
-        goldReward: 60,
+        goldReward: 30,
       },
       {
         id: 2,
         enemies: [
-          { type: "tank", count: 3 },
-          { type: "fast", count: 6 },
+          { type: "basic", count: 8 },
+          { type: "fast", count: 4 },
         ],
-        goldReward: 90,
+        goldReward: 45,
+      },
+      {
+        id: 3,
+        enemies: [
+          { type: "basic", count: 10 },
+          { type: "tank", count: 2 },
+        ],
+        goldReward: 60,
+      },
+      {
+        id: 4,
+        enemies: [
+          { type: "fast", count: 12 },
+          { type: "basic", count: 6 },
+        ],
+        goldReward: 80,
+      },
+      {
+        id: 5,
+        enemies: [
+          { type: "tank", count: 4 },
+          { type: "fast", count: 8 },
+        ],
+        goldReward: 120,
       },
     ];
   }
 
   waveManager.initialize(state.waves);
 
-  // override spawnEnemy para usar Enemy local (rápido e seguro)
+  // override spawnEnemy para usar Enemy importada
   waveManager.spawnEnemy = (type, gameState) => {
     const startDistance = gameState.pathObj.total + 24 + Math.random() * 60;
     const e = new Enemy(type, startDistance, gameState.pathObj);

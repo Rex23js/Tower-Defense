@@ -1,41 +1,35 @@
 // js/ui.js
 import { GameAPI as _gameAPI } from "./engine.js"; // para tipagem; será undefined até engine inicializar
+import { GAME_CONFIG } from "./game-config.js";
 
 let gameAPI = null;
 
 export function bindUI() {
-  // loja declarativa
-  const shopTemplate = [
-    {
-      id: "basic",
-      name: "Torre Básica",
-      cost: 40,
-      desc: "Dano moderado. Alcance médio.",
-    },
-    {
-      id: "sniper",
-      name: "Sniper",
-      cost: 80,
-      desc: "Dano alto. Cadência baixa.",
-    },
-  ];
-
   function renderShop() {
     const shop = document.querySelector(".shop");
     if (!shop) return;
     shop.innerHTML = "<h3>Loja</h3>";
     const ul = document.createElement("div");
     ul.className = "shop-items";
-    for (const t of shopTemplate) {
+
+    // Gerar itens dinamicamente baseados no game-config
+    for (const [towerType, config] of Object.entries(GAME_CONFIG.towerTypes)) {
       const item = document.createElement("div");
       item.className = "shop-item";
-      item.innerHTML = `<strong>${t.name}</strong><div>${t.desc}</div><div>Preço: ${t.cost}</div>`;
+      item.innerHTML = `
+        <div class="thumb" style="background-color: ${config.color}"></div>
+        <div class="meta">
+          <div><strong>${config.name}</strong></div>
+          <div>${config.description}</div>
+          <div>Preço: ${config.cost}</div>
+        </div>
+      `;
       item.tabIndex = 0;
       item.setAttribute("role", "button");
-      item.dataset.tower = t.id;
-      item.addEventListener("click", () => select(t.id, item));
+      item.dataset.tower = towerType;
+      item.addEventListener("click", () => select(towerType, item));
       item.addEventListener("keydown", (e) => {
-        if (e.key === "Enter") select(t.id, item);
+        if (e.key === "Enter") select(towerType, item);
       });
       ul.appendChild(item);
     }

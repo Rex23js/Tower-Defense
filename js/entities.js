@@ -195,7 +195,7 @@ export class Tower {
    */
   findTarget(enemies) {
     let bestTarget = null;
-    let bestScore = -1;
+    let bestScore = -Infinity;
 
     for (const enemy of enemies) {
       if (enemy.dead) continue;
@@ -215,18 +215,18 @@ export class Tower {
     return bestTarget;
   }
 
-  /**
-   * Calcula a pontuação do alvo para priorização
-   * @param {Enemy} enemy - Inimigo
-   * @param {number} distance - Distância até o inimigo
-   * @returns {number} - Pontuação do alvo
-   */
-  calculateTargetScore(enemy, distance) {
-    // Priorizar inimigos mais próximos da base (menor dist)
-    const proximityToBase = 1000 - enemy.dist;
-    const proximityToTower = 200 - distance;
+  calculateTargetScore(enemy, distance, pathTotal = 1000) {
+    // proximidade à base (quanto maior, melhor)
+    const progressTowardsBase = pathTotal - enemy.dist; // 0..pathTotal
+    // proximidade à torre (quanto menor distance, melhor)
+    const closenessToTower = Math.max(0, this.range - distance); // 0..range
 
-    return proximityToBase + proximityToTower;
+    // normalizar e combinar: priorizar quem está mais avançado no caminho, e quem está mais perto da torre
+    // pesos ajustáveis:
+    const wBase = 0.7;
+    const wTower = 0.3;
+
+    return wBase * progressTowardsBase + wTower * closenessToTower;
   }
 
   /**

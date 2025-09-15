@@ -2,6 +2,7 @@
 // Módulo responsável pelo controle e gerenciamento das waves
 
 import { GAME_CONFIG } from "./game-config.js";
+import { Enemy } from "./entities.js";
 
 export class WaveManager {
   constructor() {
@@ -140,116 +141,9 @@ export class WaveManager {
     // Posição inicial: fora do final do path
     const startDistance = gameState.pathObj.total + 24 + Math.random() * 40;
 
-    // Importar dinamicamente a classe Enemy quando necessário
-    import("./entities.js")
-      .then(({ Enemy }) => {
-        const enemy = new Enemy(type, startDistance, gameState.pathObj);
-        gameState.enemies.push(enemy);
-      })
-      .catch(() => {
-        // Fallback caso entities.js não esteja disponível
-        console.warn(
-          "Não foi possível importar Enemy, usando implementação local"
-        );
-        const enemy = this.createEnemyFallback(
-          type,
-          startDistance,
-          gameState.pathObj
-        );
-        gameState.enemies.push(enemy);
-      });
-  }
-
-  /**
-   * Implementação fallback para criação de inimigos
-   * @param {string} type - Tipo do inimigo
-   * @param {number} startDistance - Distância inicial
-   * @param {Object} pathObj - Objeto do caminho
-   */
-  createEnemyFallback(type, startDistance, pathObj) {
-    const config = GAME_CONFIG.enemyTypes[type] || GAME_CONFIG.enemyTypes.basic;
-
-    return {
-      type: type,
-      dist: startDistance,
-      pathObj: pathObj,
-      dead: false,
-      size: config.size,
-      speed: config.speed,
-      hp: config.hp,
-      maxHp: config.hp,
-      color: config.color,
-      goldValue: config.goldValue,
-      x: 0,
-      y: 0,
-
-      update(dt) {
-        // Mover em direção ao início do path
-        this.dist -= this.speed * dt;
-        if (this.dist <= 0) {
-          this.dead = true;
-          return "reached_base";
-        }
-
-        // Atualizar posição baseada na distância no path
-        const p = this.samplePointAtDistance(this.pathObj, this.dist);
-        this.x = p.x;
-        this.y = p.y;
-        return null;
-      },
-
-      samplePointAtDistance(pathObj, distance) {
-        const { points, cumulative } = pathObj;
-        if (!points || points.length === 0) return { x: 0, y: 0 };
-        if (distance <= 0) return points[0];
-        if (distance >= pathObj.total) return points[points.length - 1];
-
-        // Busca binária para encontrar o segmento
-        let low = 0;
-        let high = cumulative.length - 1;
-        while (low <= high) {
-          const mid = Math.floor((low + high) / 2);
-          if (cumulative[mid] <= distance && distance <= cumulative[mid + 1]) {
-            const a = points[mid];
-            const b = points[mid + 1];
-            const segLen = cumulative[mid + 1] - cumulative[mid];
-            const t = segLen === 0 ? 0 : (distance - cumulative[mid]) / segLen;
-            return { x: a.x + (b.x - a.x) * t, y: a.y + (b.y - a.y) * t };
-          }
-          if (cumulative[mid] < distance) low = mid + 1;
-          else high = mid - 1;
-        }
-        return points[points.length - 1];
-      },
-
-      draw(ctx) {
-        ctx.fillStyle = this.color;
-        ctx.fillRect(
-          this.x - this.size / 2,
-          this.y - this.size / 2,
-          this.size,
-          this.size
-        );
-
-        // Barra de HP
-        ctx.fillStyle = "rgba(0,0,0,0.35)";
-        ctx.fillRect(
-          this.x - this.size / 2,
-          this.y - this.size / 2 - 6,
-          this.size,
-          4
-        );
-        ctx.fillStyle = "#10b981";
-        const hpRatio = Math.max(0, this.hp / this.maxHp);
-        const hpWidth = hpRatio * this.size;
-        ctx.fillRect(
-          this.x - this.size / 2,
-          this.y - this.size / 2 - 6,
-          hpWidth,
-          4
-        );
-      },
-    };
+    // Usar diretamente a classe Enemy importada
+    const enemy = new Enemy(type, startDistance, gameState.pathObj);
+    gameState.enemies.push(enemy);
   }
 
   /**
