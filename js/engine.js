@@ -229,65 +229,36 @@ export async function initEngine(canvas) {
 
     startNextWave: () => waveManager.startNextWave(state),
 
-    togglePause: () => (state.running = !state.running),
+    togglePause: () => {
+      state.running = !state.running;
+      if (state.running) {
+        waveManager.resumeGame();
+      } else {
+        waveManager.pauseGame();
+      }
+    },
 
     setAutoWaves: (enabled) => waveManager.setAutoWaves(enabled),
+
+    toggleAutoWaves: () => waveManager.toggleAutoWaves(),
 
     getWaveStatus: () => waveManager.getStatus(),
 
     getState: () => state,
+
+    // Novo: expor WaveManager para a UI
+    getWaveManager: () => waveManager,
   };
 
   // carregar waves via API
   try {
     state.waves = await getWaves();
+    waveManager.initialize(state.waves);
   } catch (e) {
-    console.warn("Falha ao carregar waves; usando fallback", e);
-    state.waves = [
-      {
-        id: 1,
-        enemies: [
-          { type: "basic", count: 6 },
-          { type: "fast", count: 2 },
-        ],
-        goldReward: 30,
-      },
-      {
-        id: 2,
-        enemies: [
-          { type: "basic", count: 8 },
-          { type: "fast", count: 4 },
-        ],
-        goldReward: 45,
-      },
-      {
-        id: 3,
-        enemies: [
-          { type: "basic", count: 10 },
-          { type: "tank", count: 2 },
-        ],
-        goldReward: 60,
-      },
-      {
-        id: 4,
-        enemies: [
-          { type: "fast", count: 12 },
-          { type: "basic", count: 6 },
-        ],
-        goldReward: 80,
-      },
-      {
-        id: 5,
-        enemies: [
-          { type: "tank", count: 4 },
-          { type: "fast", count: 8 },
-        ],
-        goldReward: 120,
-      },
-    ];
+    console.warn("Falha ao carregar waves; usando configuração local", e);
+    // Usar configuração local do game-config.js
+    waveManager.initialize(GAME_CONFIG.waveDefinitions);
   }
-
-  waveManager.initialize(state.waves);
 
   // override spawnEnemy para usar Enemy importada
   waveManager.spawnEnemy = (type, gameState) => {
@@ -415,34 +386,47 @@ export async function initEngine(canvas) {
 
     waveManager.update(dt, state);
 
+    // Processar inimigos
     for (const en of state.enemies) {
       const res = en.update(dt);
-      if (res === "reached_base") state.lives -= 1;
+      if (res === "reached_base") {
+        state.lives -= 1;
+        // Notificar WaveManager sobre inimigo que chegou na base
+        waveManager.onEnemyDefeated(en);
+      }
     }
 
+    // Processar torres
     for (const t of state.towers) t.update(dt, state);
 
+    // Filtrar inimigos mortos e notificar WaveManager
     const before = state.enemies.length;
+    const killedEnemies = state.enemies.filter((e) => e.dead);
     state.enemies = state.enemies.filter((e) => !e.dead);
     const killed = before - state.enemies.length;
+
+    // Notificar WaveManager sobre inimigos derrotados
     if (killed > 0) {
-      // reward already applied in tower.fire
+      killedEnemies.forEach((enemy) => {
+        waveManager.onEnemyDefeated(enemy);
+      });
     }
 
-    // HUD updates
+    // HUD updates básicos (os eventos do WaveManager cuidam do resto)
     const goldEl = document.getElementById("gold");
     const livesEl = document.getElementById("lives");
-    const waveEl = document.getElementById("wave");
     if (goldEl) goldEl.textContent = `Ouro: ${state.gold}`;
     if (livesEl) livesEl.textContent = `Vidas: ${state.lives}`;
-    if (waveEl) {
-      const st = waveManager.getStatus();
-      waveEl.textContent = `Wave: ${st.currentWave}/${st.totalWaves}`;
-    }
 
+    // Game Over
     if (state.lives <= 0) {
       state.running = false;
       console.info("Game Over");
+      // Disparar evento de game over
+      waveManager.dispatchEvent("game:over", {
+        reason: "no_lives",
+        finalScore: waveManager.calculateScore(state),
+      });
     }
   }
 

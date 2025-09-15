@@ -24,18 +24,21 @@
     <!-- HOME -->
     <template id="view-home">
       <section class="page home-page">
-      <div class="hero">
-        <div class="hero-content">
-          <p class="hero-sub">Coloque torres, lute contra ondas de inimigos</p>
-          <div class="hero-cta">
-            <button
-              id="btn-play"
-              class="primary"
-              aria-label="Jogar"
-              data-link="#/game"
-            >
-              JOGAR AGORA
-            </button>
+        <div class="hero">
+          <div class="hero-content">
+            <p class="hero-sub">
+              Coloque torres, lute contra ondas de inimigos
+            </p>
+            <div class="hero-cta">
+              <button
+                id="btn-play"
+                class="primary"
+                aria-label="Jogar"
+                data-link="#/game"
+              >
+                JOGAR AGORA
+              </button>
+            </div>
           </div>
         </div>
       </section>
@@ -59,12 +62,16 @@
                 <span id="gold">Ouro: 0</span>
                 <span id="lives">Vidas: 20</span>
                 <span id="wave">Wave: 0</span>
+                <span id="enemy-count">Inimigos: 0</span>
               </div>
               <div class="controls-inline">
                 <button id="btn-start-wave" class="secondary">
                   Iniciar Wave
                 </button>
                 <button id="btn-pause" class="secondary">Pausa</button>
+                <button id="btn-auto-wave" class="secondary">
+                  Waves Auto (Off)
+                </button>
               </div>
             </div>
 
@@ -96,6 +103,44 @@
       </section>
     </template>
 
+    <!-- VICTORY SCREEN -->
+    <template id="view-victory">
+      <section class="page victory-page">
+        <div class="victory-screen">
+          <div class="victory-content">
+            <h1 class="victory-title">🎉 VITÓRIA!</h1>
+            <div class="victory-stats">
+              <div class="stat-item">
+                <span class="stat-label">Pontuação Final:</span>
+                <span class="stat-value" id="final-score">0</span>
+              </div>
+              <div class="stat-item">
+                <span class="stat-label">Waves Completadas:</span>
+                <span class="stat-value" id="waves-completed">0</span>
+              </div>
+              <div class="stat-item">
+                <span class="stat-label">Vidas Restantes:</span>
+                <span class="stat-value" id="remaining-lives">0</span>
+              </div>
+              <div class="stat-item">
+                <span class="stat-label">Ouro Final:</span>
+                <span class="stat-value" id="final-gold">0</span>
+              </div>
+            </div>
+            <div class="victory-actions">
+              <button class="primary" data-link="#/game">
+                Jogar Novamente
+              </button>
+              <button class="secondary" data-link="#/">Voltar ao Menu</button>
+              <button class="secondary" data-link="#/scores">
+                Ver Ranking
+              </button>
+            </div>
+          </div>
+        </div>
+      </section>
+    </template>
+
     <!-- DOCS -->
     <template id="view-docs">
       <section class="page docs-page">
@@ -113,7 +158,7 @@
     </template>
 
     <footer class="site-footer" role="contentinfo">
-      <div class="footer-inner">Projeto acadêmico — 2025</div>
+      <div class="footer-inner">Projeto acadêmico – 2025</div>
     </footer>
 
     <script type="module" src="js/main.js"></script>

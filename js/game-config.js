@@ -13,6 +13,7 @@ export const GAME_CONFIG = {
   // Configurações das waves
   autoWaveDelay: 1.5, // segundos de delay entre waves no modo automático
   enemySpawnDelay: 0.5, // intervalo entre spawn de inimigos da mesma wave
+  totalWaves: 12, // número total de waves no jogo
 
   // Recompensas
   goldPerKill: 7,
@@ -89,8 +90,117 @@ export const GAME_CONFIG = {
     },
   },
 
+  // Configuração das waves - sistema finito com progressão
+  waveDefinitions: [
+    // Waves iniciais - tutorial básico
+    {
+      id: 1,
+      enemies: [{ type: "basic", count: 5 }],
+      goldReward: 40,
+      isBossWave: false,
+    },
+    {
+      id: 2,
+      enemies: [{ type: "basic", count: 8 }],
+      goldReward: 50,
+      isBossWave: false,
+    },
+    {
+      id: 3,
+      enemies: [{ type: "fast", count: 6 }],
+      goldReward: 60,
+      isBossWave: false,
+    },
+
+    // Waves intermediárias - mistura de tipos
+    {
+      id: 4,
+      enemies: [
+        { type: "basic", count: 6 },
+        { type: "fast", count: 3 },
+      ],
+      goldReward: 70,
+      isBossWave: false,
+    },
+    {
+      id: 5,
+      enemies: [
+        { type: "tank", count: 2 },
+        { type: "basic", count: 4 },
+      ],
+      goldReward: 80,
+      isBossWave: false,
+    },
+    {
+      id: 6,
+      enemies: [{ type: "fast", count: 10 }],
+      goldReward: 90,
+      isBossWave: false,
+    },
+
+    // Waves avançadas - maior dificuldade
+    {
+      id: 7,
+      enemies: [
+        { type: "tank", count: 3 },
+        { type: "fast", count: 5 },
+      ],
+      goldReward: 100,
+      isBossWave: false,
+    },
+    {
+      id: 8,
+      enemies: [
+        { type: "basic", count: 12 },
+        { type: "tank", count: 2 },
+      ],
+      goldReward: 110,
+      isBossWave: false,
+    },
+    {
+      id: 9,
+      enemies: [
+        { type: "fast", count: 8 },
+        { type: "tank", count: 4 },
+      ],
+      goldReward: 120,
+      isBossWave: false,
+    },
+
+    // Waves finais - preparação para o boss
+    {
+      id: 10,
+      enemies: [
+        { type: "tank", count: 6 },
+        { type: "fast", count: 6 },
+      ],
+      goldReward: 140,
+      isBossWave: false,
+    },
+    {
+      id: 11,
+      enemies: [
+        { type: "basic", count: 15 },
+        { type: "tank", count: 3 },
+      ],
+      goldReward: 160,
+      isBossWave: false,
+    },
+
+    // Wave final - Boss battle
+    {
+      id: 12,
+      enemies: [
+        { type: "boss", count: 2 },
+        { type: "tank", count: 2 },
+      ],
+      goldReward: 300,
+      isBossWave: true,
+    },
+  ],
+
   visual: {
-    backgroundColor: "#f8fafc", // <-- troque aqui (tema claro)
+    backgroundColor: "#f8fafc", // tema claro
     pathColor: "#ffffff",
     pathBorderColor: "#e6e6e6",
     pathWidth: 48,
