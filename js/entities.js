@@ -169,6 +169,9 @@ export class Tower {
     this.target = null;
     this.totalDamageDealt = 0;
     this.enemiesKilled = 0;
+    // --- Adicionar no constructor da Tower (entities.js) ---
+    this.retargetTimer = 0;
+    this.retargetInterval = 0.25; // segundos entre buscas de alvo — ajuste se quiser (0.1..0.5)
   }
 
   /**
@@ -177,22 +180,24 @@ export class Tower {
    * @param {Object} gameState - Estado do jogo
    */
   update(dt, gameState) {
+    // --- Substituir Tower.update(dt, gameState) ---
     this.cooldown -= dt;
+    this.retargetTimer -= dt;
 
-    if (this.cooldown <= 0) {
-      const target = this.findTarget(gameState.enemies);
-      if (target) {
-        this.fire(target, gameState);
-        this.cooldown = 1 / this.fireRate;
-      }
+    // Só refaz a busca de alvo periodicamente (ou se não tiver alvo)
+    if (!this.target || this.retargetTimer <= 0) {
+      this.retargetTimer = this.retargetInterval;
+      this.target = this.findTarget(gameState.enemies || []);
+      // se o alvo morreu entre updates, findTarget devolve outro ou null
+    }
+
+    // Atira apenas quando o cooldown zerar e houver alvo válido
+    if (this.cooldown <= 0 && this.target) {
+      this.fire(this.target, gameState);
+      this.cooldown = 1 / this.fireRate;
     }
   }
 
-  /**
-   * Encontra o melhor alvo dentro do alcance
-   * @param {Array} enemies - Array de inimigos
-   * @returns {Enemy|null} - Inimigo alvo ou null
-   */
   findTarget(enemies) {
     let bestTarget = null;
     let bestScore = -Infinity;
@@ -203,8 +208,9 @@ export class Tower {
       const distance = Math.hypot(enemy.x - this.x, enemy.y - this.y);
       if (distance > this.range) continue;
 
-      // Estratégia de alvo: priorizar inimigos mais próximos da base
-      const score = this.calculateTargetScore(enemy, distance);
+      // Passa o path total para cálculo mais preciso
+      const pathTotal = (enemy.pathObj && enemy.pathObj.total) || 1000;
+      const score = this.calculateTargetScore(enemy, distance, pathTotal);
       if (score > bestScore) {
         bestScore = score;
         bestTarget = enemy;
@@ -214,15 +220,19 @@ export class Tower {
     this.target = bestTarget;
     return bestTarget;
   }
-
+  // --- Nova calculateTargetScore(enemy, distance, pathTotal) ---
+  // Normaliza valores e usa pathTotal real para evitar números mágicos.
   calculateTargetScore(enemy, distance, pathTotal = 1000) {
-    // proximidade à base (quanto maior, melhor)
-    const progressTowardsBase = pathTotal - enemy.dist; // 0..pathTotal
-    // proximidade à torre (quanto menor distance, melhor)
-    const closenessToTower = Math.max(0, this.range - distance); // 0..range
+    // quanto mais avançado no caminho, maior o progress (0..pathTotal)
+    const progressTowardsBase = Math.max(
+      0,
+      (pathTotal || 1000) - (enemy.dist || 0)
+    );
 
-    // normalizar e combinar: priorizar quem está mais avançado no caminho, e quem está mais perto da torre
-    // pesos ajustáveis:
+    // quanto mais perto da torre, maior closeness (0..range)
+    const closenessToTower = Math.max(0, (this.range || 0) - distance);
+
+    // pesos: prefira quem está mais próximo da base
     const wBase = 0.7;
     const wTower = 0.3;
 
