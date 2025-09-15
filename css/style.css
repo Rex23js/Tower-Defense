@@ -5,9 +5,6 @@
   --accent: #111827;
   --muted: #6b7280;
   --text: #0b1220;
-  --success: #10b981;
-  --warning: #f59e0b;
-  --danger: #ef4444;
 }
 
 * {
@@ -58,29 +55,57 @@ a {
   padding: 0 18px;
 }
 
-/* HOME / Hero */
+/* HOME / Hero - Refinado */
 .hero {
-  border: 1px solid rgba(0, 0, 0, 0.06);
-  padding: 80px 40px;
-  border-radius: 6px;
+  /* Limita a largura e centraliza para melhor legibilidade */
+  max-width: 700px;
+  margin: 4rem auto;
+  padding: 3rem;
   text-align: center;
-  background: #fff;
-}
-.hero-title {
-  font-size: 44px;
-  margin: 0 0 10px;
-}
-.hero-sub {
-  color: var(--muted);
-  margin: 0 0 20px;
-  font-size: 18px;
-}
-.primary {
-  padding: 12px 20px;
+
+  /* Adiciona a estética de "painel" wireframe */
+  background-color: var(--panel);
   border: 1px solid rgba(0, 0, 0, 0.08);
-  background: transparent;
+  border-radius: 8px;
+}
+
+.hero-title {
+  font-size: 2.8rem;
+  font-weight: 700;
+  margin-bottom: 1rem;
+  /* Melhora a "respirabilidade" do título */
+  letter-spacing: -0.5px;
+}
+
+.hero-sub {
+  font-size: 1.15rem;
+  color: var(--muted);
+  margin-bottom: 2.5rem;
+  font-weight: 400;
+  line-height: 1.6;
+}
+
+/* Botão primário refinado com estilo "fantasma" */
+.primary {
+  /* Estilo de botão "fantasma" para estética wireframe */
+  background-color: transparent;
+  color: var(--accent);
+  border: 2px solid var(--accent);
+
+  padding: 14px 28px;
+  text-decoration: none;
   border-radius: 6px;
+  font-weight: 600;
   cursor: pointer;
+
+  /* Transição suave para o hover */
+  transition: background-color 0.2s ease-in-out, color 0.2s ease-in-out;
+}
+
+.primary:hover {
+  /* Inverte as cores no hover para feedback claro */
+  background-color: var(--accent);
+  color: var(--bg);
 }
 
 /* Game layout */
@@ -152,13 +177,6 @@ a {
   cursor: pointer;
 }
 
-/* Auto wave button states */
-.controls-inline button.active {
-  background: var(--success);
-  color: white;
-  border-color: var(--success);
-}
-
 /* Canvas box */
 .canvas-wrap {
   background: #fff;
@@ -174,84 +192,6 @@ canvas {
   max-width: 100%;
   height: auto;
   border: 1px solid rgba(0, 0, 0, 0.03);
-}
-
-/* Victory Screen */
-.victory-page {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  min-height: 80vh;
-}
-
-.victory-screen {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  border-radius: 12px;
-  padding: 0;
-  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
-  max-width: 600px;
-  width: 100%;
-  overflow: hidden;
-}
-
-.victory-content {
-  background: white;
-  margin: 4px;
-  border-radius: 8px;
-  padding: 60px 40px;
-  text-align: center;
-}
-
-.victory-title {
-  font-size: 3rem;
-  margin: 0 0 40px 0;
-  color: var(--accent);
-  font-weight: 800;
-  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-}
-
-.victory-stats {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 24px;
-  margin-bottom: 40px;
-}
-
-.stat-item {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  padding: 20px;
-  background: var(--panel);
-  border-radius: 8px;
-  border: 1px solid rgba(0, 0, 0, 0.06);
-}
-
-.stat-label {
-  font-size: 0.9rem;
-  color: var(--muted);
-  margin-bottom: 8px;
-  font-weight: 500;
-}
-
-.stat-value {
-  font-size: 1.8rem;
-  font-weight: 700;
-  color: var(--accent);
-}
-
-.victory-actions {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  align-items: center;
-}
-
-.victory-actions button {
-  min-width: 200px;
-  padding: 14px 24px;
-  font-size: 1rem;
-  font-weight: 600;
 }
 
 /* Scores */
@@ -289,61 +229,11 @@ canvas {
   color: var(--muted);
 }
 
-/* Enhanced message notifications */
-#engine-msg.boss-wave {
-  animation: pulse 1s ease-in-out;
-  border: 2px solid #dc2626;
-}
-
-@keyframes pulse {
-  0%,
-  100% {
-    transform: scale(1);
-  }
-  50% {
-    transform: scale(1.05);
-  }
-}
-
 /* Focus for accessibility */
 button:focus,
 .shop-item:focus {
   outline: 3px solid #ffd166;
   outline-offset: 2px;
-}
-
-/* Button states */
-button:hover {
-  opacity: 0.9;
-  transform: translateY(-1px);
-  transition: all 0.2s ease;
-}
-
-button:active {
-  transform: translateY(0);
-}
-
-button.primary {
-  background: var(--accent);
-  color: white;
-  border-color: var(--accent);
-}
-
-button.secondary {
-  background: transparent;
-  border-color: rgba(0, 0, 0, 0.08);
-}
-
-/* Enemy count indicator styling */
-#enemy-count {
-  color: var(--danger);
-  font-weight: 700;
-}
-
-/* Wave display styling */
-#wave {
-  color: var(--accent);
-  font-weight: 700;
 }
 
 /* Responsive */
@@ -357,34 +247,9 @@ button.secondary {
   .hero-title {
     font-size: 28px;
   }
-
-  .victory-stats {
-    grid-template-columns: 1fr;
-  }
-
-  .victory-content {
-    padding: 40px 20px;
-  }
-
-  .victory-title {
-    font-size: 2rem;
-  }
-
-  .hud-inline {
-    flex-wrap: wrap;
-    gap: 8px;
-  }
-
-  .controls-inline {
-    flex-wrap: wrap;
-    gap: 8px;
-  }
-}
-
-@media (max-width: 600px) {
-  .controls-inline button,
-  .hud-inline span {
-    font-size: 0.9rem;
-    padding: 6px 8px;
+  .hero {
+    max-width: 90%;
+    margin: 2rem auto;
+    padding: 2rem;
   }
 }

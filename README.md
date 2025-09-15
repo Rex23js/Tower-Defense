@@ -2,7 +2,7 @@
 
   <img src="[URL_DA_IMAGEM_DE_CABEÇALHO_AQUI]" alt="Banner do Projeto Tower Defense" width="800"/>
 
-  # Tower Defense - Projeto Acadêmico 🚀
+# Tower Defense - Projeto Acadêmico 🚀
 
   <p>
     <strong>Um jogo de Tower Defense construído com HTML, CSS e JavaScript puro, focado em boas práticas de desenvolvimento, testes e integração com API.</strong>
@@ -25,16 +25,16 @@
 
 ## 📖 Sumário
 
-* [🎯 Sobre o Projeto](#-sobre-o-projeto)
-* [✨ Funcionalidades](#-funcionalidades)
-* [🛠️ Tecnologias Utilizadas](#️-tecnologias-utilizadas)
-* [🚀 Como Executar o Projeto](#-como-executar-o-projeto)
-* [🔌 API - Estrutura e Integração](#-api---estrutura-e-integração)
-* [✅ Testes e Qualidade](#-testes-e-qualidade)
-* [🔮 Roadmap de Futuras Implementações](#-roadmap-de-futuras-implementações)
-* [🤝 Como Contribuir](#-como-contribuir)
-* [👨‍💻 Autores](#-autores)
-* [📄 Licença](#-licença)
+- [🎯 Sobre o Projeto](#-sobre-o-projeto)
+- [✨ Funcionalidades](#-funcionalidades)
+- [🛠️ Tecnologias Utilizadas](#️-tecnologias-utilizadas)
+- [🚀 Como Executar o Projeto](#-como-executar-o-projeto)
+- [🔌 API - Estrutura e Integração](#-api---estrutura-e-integração)
+- [✅ Testes e Qualidade](#-testes-e-qualidade)
+- [🔮 Roadmap de Futuras Implementações](#-roadmap-de-futuras-implementações)
+- [🤝 Como Contribuir](#-como-contribuir)
+- [👨‍💻 Autores](#-autores)
+- [📄 Licença](#-licença)
 
 ---
 
@@ -46,14 +46,14 @@ Este projeto é a materialização de um desafio acadêmico: criar um jogo de **
 
 ## ✨ Funcionalidades
 
-* ✅ **Sistema de Ondas (Waves):** Ondas de inimigos com dificuldade progressiva, carregadas dinamicamente via API.
-* ✅ **Torres Estratégicas:** 3 tipos de torres com características únicas (dano, alcance, cadência de tiro).
-* ✅ **Inimigos Variados:** 4 tipos de inimigos com diferentes atributos (velocidade, vida, etc.).
-* ✅ **Economia e Vidas:** Sistema de ouro para construção e vidas que determinam a derrota.
-* ✅ **Interface Intuitiva:** HUD clara para exibir recursos, onda atual e outras informações vitais.
-* ✅ **Ranking de Pontuação:** As pontuações são salvas e exibidas através de uma API REST.
-* ✅ **Responsividade:** Interface adaptável para uma boa experiência em diferentes resoluções de tela.
-* ✅ **Acessibilidade:** Navegação via teclado (`Tab` e `Enter`) para interações na UI.
+- ✅ **Sistema de Ondas (Waves):** Ondas de inimigos com dificuldade progressiva, carregadas dinamicamente via API.
+- ✅ **Torres Estratégicas:** 3 tipos de torres com características únicas (dano, alcance, cadência de tiro).
+- ✅ **Inimigos Variados:** 4 tipos de inimigos com diferentes atributos (velocidade, vida, etc.).
+- ✅ **Economia e Vidas:** Sistema de ouro para construção e vidas que determinam a derrota.
+- ✅ **Interface Intuitiva:** HUD clara para exibir recursos, onda atual e outras informações vitais.
+- ✅ **Ranking de Pontuação:** As pontuações são salvas e exibidas através de uma API REST.
+- ✅ **Responsividade:** Interface adaptável para uma boa experiência em diferentes resoluções de tela.
+- ✅ **Acessibilidade:** Navegação via teclado (`Tab` e `Enter`) para interações na UI.
 
 ---
 
@@ -61,15 +61,15 @@ Este projeto é a materialização de um desafio acadêmico: criar um jogo de **
 
 O projeto foi construído com as seguintes ferramentas:
 
-| Ferramenta       | Descrição                                         |
-| ---------------- | --------------------------------------------------- |
-| **HTML5** | Estrutura semântica e elemento `<canvas>` para o jogo. |
-| **CSS3** | Estilização e responsividade da interface.          |
-| **JavaScript (ES6+)** | Lógica do jogo, manipulação do DOM e requisições. |
-| **JSON Server** | Simulação de uma API RESTful para waves e scores. |
-| **Git & GitHub** | Versionamento de código e gerenciamento do projeto. |
-| **Postman** | Documentação e teste dos endpoints da API.          |
-| **Vercel/Netlify** | Hospedagem e deploy contínuo.                       |
+| Ferramenta            | Descrição                                              |
+| --------------------- | ------------------------------------------------------ |
+| **HTML5**             | Estrutura semântica e elemento `<canvas>` para o jogo. |
+| **CSS3**              | Estilização e responsividade da interface.             |
+| **JavaScript (ES6+)** | Lógica do jogo, manipulação do DOM e requisições.      |
+| **JSON Server**       | Simulação de uma API RESTful para waves e scores.      |
+| **Git & GitHub**      | Versionamento de código e gerenciamento do projeto.    |
+| **Postman**           | Documentação e teste dos endpoints da API.             |
+| **Vercel/Netlify**    | Hospedagem e deploy contínuo.                          |
 
 ---
 
@@ -101,11 +101,11 @@ npm run api
 
 A aplicação utiliza uma API REST simulada com `JSON Server` para gerenciar dados dinâmicos.
 
-| Verbo | Endpoint      | Descrição                                            |
-| :---- | :------------ | :--------------------------------------------------- |
-| `GET`   | `/waves`      | Retorna a configuração completa das ondas de inimigos. |
-| `GET`   | `/scores`     | Retorna a lista de pontuações mais altas.            |
-| `POST`  | `/scores`     | Adiciona uma nova pontuação ao banco de dados.       |
+| Verbo  | Endpoint  | Descrição                                              |
+| :----- | :-------- | :----------------------------------------------------- |
+| `GET`  | `/waves`  | Retorna a configuração completa das ondas de inimigos. |
+| `GET`  | `/scores` | Retorna a lista de pontuações mais altas.              |
+| `POST` | `/scores` | Adiciona uma nova pontuação ao banco de dados.         |
 
 As requisições são tratadas de forma assíncrona com `async/await` e blocos `try...catch` para garantir que falhas de comunicação com o servidor não quebrem a aplicação, informando o usuário sobre o problema.
 
@@ -115,9 +115,9 @@ As requisições são tratadas de forma assíncrona com `async/await` e blocos `
 
 Para assegurar a robustez do projeto, foram aplicadas as seguintes estratégias de teste:
 
-* **Testes de API com Postman:** Uma collection completa foi criada para validar todos os endpoints, incluindo cenários de sucesso (`200 OK`, `201 Created`) e de erro (`404`, `500`). O arquivo `TowerDefense.postman_collection.json` está na branch `testes`.
-* **Testes Manuais e Casos de Uso:** Foram documentados e executados casos de teste para validar a lógica do jogo, como o posicionamento de torres, o cálculo de dano e a lógica de vitória/derrota.
-* **Tratamento de Casos Críticos:** O sistema foi projetado para lidar com falhas, como a indisponibilidade da API ou entradas inválidas do usuário, exibindo feedback claro sem interromper a experiência.
+- **Testes de API com Postman:** Uma collection completa foi criada para validar todos os endpoints, incluindo cenários de sucesso (`200 OK`, `201 Created`) e de erro (`404`, `500`). O arquivo `TowerDefense.postman_collection.json` está na branch `testes`.
+- **Testes Manuais e Casos de Uso:** Foram documentados e executados casos de teste para validar a lógica do jogo, como o posicionamento de torres, o cálculo de dano e a lógica de vitória/derrota.
+- **Tratamento de Casos Críticos:** O sistema foi projetado para lidar com falhas, como a indisponibilidade da API ou entradas inválidas do usuário, exibindo feedback claro sem interromper a experiência.
 
 ---
 
@@ -125,12 +125,12 @@ Para assegurar a robustez do projeto, foram aplicadas as seguintes estratégias 
 
 Este projeto tem potencial para crescer. As próximas funcionalidades planejadas são:
 
--   [ ] **Novas Torres e Inimigos:** Expandir a variedade estratégica do jogo.
--   [ ] **Sistema de Upgrade:** Permitir que o jogador melhore as torres durante a partida.
--   [ ] **Efeitos Sonoros e Música:** Adicionar uma camada de imersão auditiva.
--   [ ] **Múltiplos Mapas:** Oferecer diferentes desafios e caminhos.
--   [ ] **Animações e Efeitos Visuais:** Polir as animações de ataque, explosão e morte.
--   [ ] **Salvar Progresso:** Implementar `localStorage` para salvar o jogo entre sessões.
+- [ ] **Novas Torres e Inimigos:** Expandir a variedade estratégica do jogo.
+- [ ] **Sistema de Upgrade:** Permitir que o jogador melhore as torres durante a partida.
+- [ ] **Efeitos Sonoros e Música:** Adicionar uma camada de imersão auditiva.
+- [ ] **Múltiplos Mapas:** Oferecer diferentes desafios e caminhos.
+- [ ] **Animações e Efeitos Visuais:** Polir as animações de ataque, explosão e morte.
+- [ ] **Salvar Progresso:** Implementar `localStorage` para salvar o jogo entre sessões.
 
 ---
 
@@ -145,22 +145,25 @@ Contribuições são sempre bem-vindas! Se você tem ideias para melhorar o proj
 5.  Abra um **Pull Request**.
 
 ---
+
 <div align="center">
 ## 👨‍💻 Autores
 
 Este projeto foi desenvolvido com dedicação por:
 
 | [<img src="https://avatars.githubusercontent.com/u/200134059?v=4" width=115><br><sub>Ismael Gomes (Rex)</sub>](https://github.com/Rex23jsl) | [<img src="https://avatars.githubusercontent.com/u/202681925?v=4" width=115><br><sub>Eduardo Monteiro</sub>](https://github.com/eduardominhom) |
-| :---: | :---: |
-| [GitHub](https://github.com/Rex23js) <br/> | [GitHub](https://github.com/eduardominhom) 
+| :-----------------------------------------------------------------------------------------------------------------------------------------: | :--------------------------------------------------------------------------------------------------------------------------------------------: |
+|                                                 [GitHub](https://github.com/Rex23js) <br/>                                                  |                                                   [GitHub](https://github.com/eduardominhom)                                                   |
 
 ---
+
 </div>
 ## 📄 Licença
 
 Este projeto está sob a licença MIT. Veja o arquivo [LICENSE](LICENSE) para mais detalhes.
 
 ---
+
 <div align="center">
   <p>Feito com ❤️ e muito café☕!</p>
 </div>
