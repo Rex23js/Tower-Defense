@@ -18,35 +18,268 @@ export const GAME_CONFIG = {
   // Recompensas
   goldPerKill: 7,
 
-  // Definições dos tipos de inimigos
+  /**
+   * ============================================================================
+   * Enemy Types - Definições dos tipos de inimigos
+   *
+   * Removidos/alterados efeitos que aplicavam debuff diretamente às torres.
+   * Em vez disso, alguns inimigos agora aplicam efeitos a inimigos ao morrer
+   * (clouds/auras) ou possuem atributos internos, sem impactar torres.
+   * ============================================================================
+   */
   enemyTypes: {
+    // Inimigo padrão
     basic: {
       speed: 70, // px/s
-      hp: 12,
+      hp: 14,
       size: 18,
       color: "#ef4444",
       goldValue: 6,
+      description: "Inimigo padrão, equilíbrio entre velocidade e vida.",
     },
+
+    // Inimigos rápidos - baixo HP, alta velocidade
     fast: {
-      speed: 140, // px/s
-      hp: 6,
-      size: 18,
+      speed: 150,
+      hp: 7,
+      size: 16,
       color: "#f59e0b",
-      goldValue: 8,
+      goldValue: 7,
+      description: "Rápido e frágil. Bom para testar cadência das torres.",
     },
+
+    // Tanque - lento, muito HP
     tank: {
-      speed: 40, // px/s
+      speed: 40,
+      hp: 40,
+      size: 24,
+      color: "#8b5cf6",
+      goldValue: 18,
+      armor: 2, // reduz dano recebido por hit (pode ser usado pela lógica de combate)
+      description: "Lento e resistente. Reduz dano por ataque.",
+    },
+
+    // Armored - parecido com tank, mais focado em armadura
+    armored: {
+      speed: 45,
+      hp: 28,
+      size: 22,
+      color: "#334155",
+      goldValue: 14,
+      armor: 4,
+      description: "Tem alta armadura; ideal para torres que ignoram armadura.",
+    },
+
+    // Enxame - várias unidades pequenas (representada por unidade única aqui;
+    // spawn logic pode criar muitas cópias)
+    swarm: {
+      speed: 120,
+      hp: 5,
+      size: 12,
+      color: "#f97316",
+      goldValue: 3,
+      onDeathSplit: 0, // se >0, poderia gerar N unidades menores ao morrer
+      description: "Pequeno e em número. Perigoso em massa.",
+    },
+
+    // Voador - pode ignorar obstáculos no mapa; towers sem alcance aéreo não o atingem
+    // (unificado com variantes aéreas para evitar duplicatas)
+    flying: {
+      speed: 140,
+      hp: 9,
+      size: 14,
+      color: "#06b6d4",
+      goldValue: 10,
+      flying: true,
+      evasion: 0.1, // chance de evitar um hit (herdado da variante 'air')
+      description:
+        "Voa sobre o caminho; requer torres com dano aéreo. Rápido e evasivo.",
+    },
+
+    // Elemental - Fogo: não aplica burn às torres; deixa nuvem de fogo ao morrer
+    fire: {
+      speed: 85,
+      hp: 18,
+      size: 20,
+      color: "#ef4444",
+      goldValue: 12,
+      burnOnDeath: 2, // dano ao longo do tempo em inimigos próximos ao morrer
+      description:
+        "Ao morrer deixa uma nuvem de fogo que danifica inimigos próximos.",
+    },
+
+    // Elemental - Gelo: efeito agora afeta inimigos (ao morrer) em vez de torres
+    ice: {
+      speed: 75,
+      hp: 20,
+      size: 20,
+      color: "#60a5fa",
+      goldValue: 12,
+      slowOnDeath: 0.25, // reduz velocidade de inimigos próximos quando morre
+      description:
+        "Ao morrer reduz a velocidade de inimigos próximos (efeito para controle de multidão).",
+    },
+
+    // Inimigo que regenera vida ao longo do tempo
+    regen: {
+      speed: 60,
       hp: 30,
       size: 22,
-      color: "#8b5cf6",
+      color: "#16a34a",
       goldValue: 15,
+      regenPerSec: 1.2, // HP recuperado por segundo
+      description: "Regenera vida lentamente durante o avanço.",
     },
-    boss: {
-      speed: 50, // px/s
-      hp: 50,
-      size: 28,
-      color: "#dc2626",
+
+    // Inimigo que cura aliados próximos periodicamente
+    healer: {
+      speed: 55,
+      hp: 16,
+      size: 20,
+      color: "#a3e635",
+      goldValue: 14,
+      healAoE: 6, // cura por evento em área próxima (lógica aplica)
+      healInterval: 3, // segundos entre curas
+      description: "Suporta aliados curando-os durante a wave.",
+    },
+
+    // Kamikaze / Bombeiro - explode ao morrer causando dano em área
+    bomber: {
+      speed: 95,
+      hp: 12,
+      size: 18,
+      color: "#f97316",
+      goldValue: 11,
+      explodeOnDeath: {
+        damage: 18,
+        radius: 36,
+      },
+      description: "Ao morrer causa explosão que fere inimigos próximos.",
+    },
+
+    // Stealth - fica invisível até ser atacado ou detectado
+    stealth: {
+      speed: 100,
+      hp: 14,
+      size: 16,
+      color: "#374151",
+      goldValue: 13,
+      stealth: true, // requer mecânica de detecção para ser alvo
+      revealOnHit: true,
+      description: "Fica invisível a menos que seja detectado ou atingido.",
+    },
+
+    // Ácido/Envenenador - agora libera nuvem venenosa ao morrer (não debuffa torres)
+    poison: {
+      speed: 80,
+      hp: 22,
+      size: 20,
+      color: "#4d7c0f",
+      goldValue: 13,
+      poisonOnDeath: 3, // DPS aplicado a inimigos na área ao morrer
+      description:
+        "Ao morrer libera uma nuvem venenosa que danifica inimigos próximos.",
+    },
+
+    // Blindado pesado - muita armadura, reduz dano físico fortemente
+    juggernaut: {
+      speed: 35,
+      hp: 120,
+      size: 34,
+      color: "#1f2937",
+      goldValue: 60,
+      armor: 12,
+      description:
+        "Extremamente resistente; ideal para superar defesas com DPS alto.",
+    },
+
+    // Unidade que gera múltiplos inimigos menores ao morrer (enxameador)
+    spawner: {
+      speed: 50,
+      hp: 26,
+      size: 24,
+      color: "#f59e0b",
+      goldValue: 20,
+      onDeathSplit: 4, // gera 4 unidades menores (por exemplo, do tipo 'swarm')
+      description:
+        "Ao morrer produz vários inimigos menores; atenção ao crowd control.",
+    },
+
+    // Fantasma/Spectral - toma menos dano físico e é imune a efeitos de ralentização
+    spectral: {
+      speed: 130,
+      hp: 18,
+      size: 16,
+      color: "#6ee7b7",
+      goldValue: 17,
+      spectral: true, // indicador para lógica: reduz dano físico/ignora slows
+      physicalResist: 0.5, // reduz 50% dano físico (exemplo)
+      description: "Parcialmente intangível; resistente a slows e dano físico.",
+    },
+
+    // Sentinela/Shield - possui um escudo que regenera; o escudo absorve dano primeiro
+    sentinel: {
+      speed: 45,
+      hp: 60,
+      size: 26,
+      color: "#0ea5e9",
       goldValue: 25,
+      shield: {
+        max: 30,
+        regenPerSec: 2,
+      },
+      description: "Possui escudo regenerável que absorve dano antes da vida.",
+    },
+
+    // Mini-boss rápido: alto HP e velocidade moderada
+    mini_boss: {
+      speed: 68,
+      hp: 140,
+      size: 36,
+      color: "#ef4444",
+      goldValue: 90,
+      armor: 3,
+      isMiniBoss: true,
+      description: "Mini-chefe com boa resistência e presença marcante.",
+    },
+
+    // Boss genérico
+    boss: {
+      speed: 50,
+      hp: 220,
+      size: 38,
+      color: "#dc2626",
+      goldValue: 200,
+      armor: 6,
+      isBoss: true,
+      description: "Chefe principal. Alta vida e armadura.",
+    },
+
+    // Variante de boss - fogo
+    boss_fire: {
+      speed: 48,
+      hp: 260,
+      size: 42,
+      color: "#ff4d4d",
+      goldValue: 300,
+      armor: 4,
+      isBoss: true,
+      burnAura: 4, // dano por segundo em áreas próximas (afeta inimigos, não torres)
+      description: "Chefe de fogo com aura que danifica inimigos próximos.",
+    },
+
+    // Variante de boss - gelo (efeito agora mira inimigos, não torres)
+    boss_ice: {
+      speed: 44,
+      hp: 280,
+      size: 44,
+      color: "#93c5fd",
+      goldValue: 320,
+      armor: 5,
+      isBoss: true,
+      slowEnemiesAura: 0.35, // reduz velocidade dos inimigos próximos
+      description:
+        "Chefe de gelo que atrasa inimigos próximos, favorecendo controle de multidão.",
     },
   },
 
@@ -90,7 +323,17 @@ export const GAME_CONFIG = {
     },
   },
 
-  // Configuração das waves - sistema finito com progressão
+  /**
+   * ============================================================================
+   * Waves - Definições de inimigos por onda
+   *
+   * Organize e ajuste as waves abaixo. Cada entrada deve conter:
+   *  - id: número da wave
+   *  - enemies: [{ type, count }, ...]
+   *  - goldReward: recompensa por completar a wave
+   *  - isBossWave: indica se é uma wave de chefe
+   * ============================================================================
+   */
   waveDefinitions: [
     // Waves iniciais - tutorial básico
     {
@@ -111,48 +354,43 @@ export const GAME_CONFIG = {
       goldReward: 60,
       isBossWave: false,
     },
-
-    // Waves intermediárias - mistura de tipos
     {
       id: 4,
       enemies: [
         { type: "basic", count: 6 },
-        { type: "fast", count: 3 },
+        { type: "fast", count: 4 },
       ],
       goldReward: 70,
       isBossWave: false,
     },
+
+    // Waves iniciais -> intermediárias
     {
       id: 5,
       enemies: [
         { type: "tank", count: 2 },
-        { type: "basic", count: 4 },
+        { type: "basic", count: 6 },
       ],
-      goldReward: 80,
+      goldReward: 85,
       isBossWave: false,
     },
     {
       id: 6,
       enemies: [{ type: "fast", count: 10 }],
-      goldReward: 90,
+      goldReward: 95,
       isBossWave: false,
     },
-
-    // Waves avançadas - maior dificuldade
     {
       id: 7,
-      enemies: [
-        { type: "tank", count: 3 },
-        { type: "fast", count: 5 },
-      ],
+      enemies: [{ type: "swarm", count: 16 }],
       goldReward: 100,
       isBossWave: false,
     },
     {
       id: 8,
       enemies: [
-        { type: "basic", count: 12 },
-        { type: "tank", count: 2 },
+        { type: "flying", count: 6 },
+        { type: "basic", count: 6 },
       ],
       goldReward: 110,
       isBossWave: false,
@@ -160,41 +398,230 @@ export const GAME_CONFIG = {
     {
       id: 9,
       enemies: [
+        { type: "armored", count: 2 },
         { type: "fast", count: 8 },
-        { type: "tank", count: 4 },
       ],
-      goldReward: 120,
+      goldReward: 125,
       isBossWave: false,
     },
-
-    // Waves finais - preparação para o boss
     {
       id: 10,
       enemies: [
-        { type: "tank", count: 6 },
-        { type: "fast", count: 6 },
+        { type: "bomber", count: 6 },
+        { type: "basic", count: 8 },
       ],
       goldReward: 140,
       isBossWave: false,
     },
+
+    // Waves intermediárias -> avançadas
     {
       id: 11,
       enemies: [
-        { type: "basic", count: 15 },
-        { type: "tank", count: 3 },
+        { type: "regen", count: 4 },
+        { type: "fast", count: 8 },
       ],
-      goldReward: 160,
+      goldReward: 155,
       isBossWave: false,
     },
-
-    // Wave final - Boss battle
     {
       id: 12,
       enemies: [
-        { type: "boss", count: 2 },
-        { type: "tank", count: 2 },
+        { type: "healer", count: 3 },
+        { type: "basic", count: 10 },
+      ],
+      goldReward: 170,
+      isBossWave: false,
+    },
+    {
+      id: 13,
+      enemies: [
+        { type: "stealth", count: 6 },
+        { type: "fast", count: 6 },
+      ],
+      goldReward: 185,
+      isBossWave: false,
+    },
+    {
+      id: 14,
+      enemies: [
+        { type: "poison", count: 4 },
+        { type: "swarm", count: 12 },
+      ],
+      goldReward: 200,
+      isBossWave: false,
+    },
+    {
+      id: 15,
+      enemies: [
+        { type: "tank", count: 4 },
+        { type: "armored", count: 2 },
+      ],
+      goldReward: 220,
+      isBossWave: false,
+    },
+
+    // Waves avançadas - introduz spawner/spectral/sentinel
+    {
+      id: 16,
+      enemies: [
+        { type: "spawner", count: 2 },
+        { type: "swarm", count: 8 },
+      ],
+      goldReward: 240,
+      isBossWave: false,
+    },
+    {
+      id: 17,
+      enemies: [
+        { type: "spectral", count: 6 },
+        { type: "fast", count: 8 },
+      ],
+      goldReward: 260,
+      isBossWave: false,
+    },
+    {
+      id: 18,
+      enemies: [
+        { type: "sentinel", count: 2 },
+        { type: "basic", count: 10 },
+      ],
+      goldReward: 280,
+      isBossWave: false,
+    },
+    {
+      id: 19,
+      enemies: [
+        { type: "fast", count: 12 },
+        { type: "poison", count: 5 },
       ],
       goldReward: 300,
+      isBossWave: false,
+    },
+
+    // Primeira dificuldade forte - mini boss surge
+    {
+      id: 20,
+      enemies: [
+        { type: "mini_boss", count: 1 },
+        { type: "tank", count: 3 },
+        { type: "fast", count: 6 },
+      ],
+      goldReward: 360,
+      isBossWave: true,
+    },
+
+    // Pós-mini boss - mistura com support/regen/healer
+    {
+      id: 21,
+      enemies: [
+        { type: "regen", count: 6 },
+        { type: "healer", count: 2 },
+        { type: "swarm", count: 10 },
+      ],
+      goldReward: 380,
+      isBossWave: false,
+    },
+    {
+      id: 22,
+      enemies: [
+        { type: "armored", count: 4 },
+        { type: "basic", count: 12 },
+      ],
+      goldReward: 400,
+      isBossWave: false,
+    },
+    {
+      id: 23,
+      enemies: [
+        { type: "spawner", count: 3 },
+        { type: "spectral", count: 4 },
+        { type: "fast", count: 8 },
+      ],
+      goldReward: 420,
+      isBossWave: false,
+    },
+
+    // Segunda linha de mini-bosses e desafios pesados
+    {
+      id: 24,
+      enemies: [
+        { type: "mini_boss", count: 2 },
+        { type: "bomber", count: 6 },
+        { type: "poison", count: 6 },
+      ],
+      goldReward: 520,
+      isBossWave: true,
+    },
+    {
+      id: 25,
+      enemies: [
+        { type: "juggernaut", count: 1 },
+        { type: "armored", count: 5 },
+        { type: "fast", count: 8 },
+      ],
+      goldReward: 600,
+      isBossWave: true,
+    },
+
+    // Preparação final - ondas com muitos inimigos variados
+    {
+      id: 26,
+      enemies: [
+        { type: "tank", count: 8 },
+        { type: "fast", count: 12 },
+        { type: "swarm", count: 20 },
+      ],
+      goldReward: 680,
+      isBossWave: false,
+    },
+    {
+      id: 27,
+      enemies: [
+        { type: "boss_fire", count: 1 },
+        { type: "spawner", count: 2 },
+        { type: "spectral", count: 6 },
+      ],
+      goldReward: 900,
+      isBossWave: true,
+    },
+
+    // Wave final - Boss(es) principais
+    {
+      id: 28,
+      enemies: [
+        { type: "boss", count: 1 },
+        { type: "boss_ice", count: 1 },
+        { type: "tank", count: 6 },
+        { type: "fast", count: 10 },
+      ],
+      goldReward: 1500,
+      isBossWave: true,
+    },
+
+    // Nova wave 29 - desafio pesado pós-chefe
+    {
+      id: 29,
+      enemies: [
+        { type: "boss_fire", count: 1 },
+        { type: "spawner", count: 2 },
+        { type: "fast", count: 12 },
+        { type: "spectral", count: 6 },
+      ],
+      goldReward: 1700,
+      isBossWave: true,
+    },
+
+    // Nova wave 30 - Última onda: combinação extrema
+    {
+      id: 30,
+      enemies: [
+        { type: "boss", count: 1 },
+        { type: "juggernaut", count: 1 },
+        { type: "mini_boss", count: 1 },
+        { type: "swarm", count: 30 },
+      ],
+      goldReward: 2500,
       isBossWave: true,
     },
   ],
