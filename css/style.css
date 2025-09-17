@@ -253,3 +253,126 @@ button:focus,
     padding: 2rem;
   }
 }
+
+/* Victory Screen */
+.victory-screen {
+  max-width: 800px;
+  margin: 3rem auto;
+  padding: 0 18px;
+}
+
+.victory-content {
+  background-color: var(--panel);
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  border-radius: 12px;
+  padding: 3rem 2.5rem;
+  text-align: center;
+  position: relative;
+}
+
+.victory-title {
+  font-size: 3.5rem;
+  font-weight: 800;
+  margin-bottom: 2rem;
+  color: var(--accent);
+  letter-spacing: -1px;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.victory-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 1.5rem;
+  margin: 2.5rem 0;
+}
+
+.stat-item {
+  background: #fff;
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  border-radius: 8px;
+  padding: 1.5rem 1rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.stat-item:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+.stat-label {
+  font-size: 0.9rem;
+  color: var(--muted);
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.stat-value {
+  font-size: 2.2rem;
+  font-weight: 700;
+  color: var(--accent);
+  line-height: 1;
+}
+
+.victory-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  justify-content: center;
+  margin-top: 2.5rem;
+}
+
+.victory-actions .primary,
+.victory-actions .secondary {
+  padding: 12px 24px;
+  border-radius: 8px;
+  text-decoration: none;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: 2px solid transparent;
+  font-size: 0.95rem;
+}
+
+.victory-actions .primary {
+  background-color: var(--accent);
+  color: var(--bg);
+  border-color: var(--accent);
+}
+
+.victory-actions .primary:hover {
+  background-color: transparent;
+  color: var(--accent);
+  transform: translateY(-1px);
+}
+
+.victory-actions .secondary {
+  background-color: transparent;
+  color: var(--accent);
+  border-color: rgba(0, 0, 0, 0.12);
+}
+
+.victory-actions .secondary:hover {
+  border-color: var(--accent);
+  background-color: rgba(17, 24, 39, 0.03);
+  transform: translateY(-1px);
+}
+
+/* Scores */
+.scores-box {
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  padding: 40px;
+  border-radius: 6px;
+  text-align: center;
+}
+.scores-box ol {
+  list-style: decimal;
+  margin: 20px auto 0;
+  padding-left: 18px;
+  text-align: left;
+  display: inline-block;
+}
