@@ -5,42 +5,136 @@ import { GAME_CONFIG } from "./game-config.js";
 let gameAPI = null;
 let waveManager = null;
 
+// Categorias das torres para organização em abas
+const TOWER_CATEGORIES = {
+  basic: {
+    name: "Básicas",
+    icon: "🏰",
+    towers: ["fire", "ice", "lightning"],
+  },
+  special: {
+    name: "Especiais",
+    icon: "⚡",
+    towers: ["antiair", "piercing", "detector"],
+  },
+  advanced: {
+    name: "Avançadas",
+    icon: "🚀",
+    towers: ["poison", "slow", "shield", "laser"],
+  },
+};
+
 export function bindUI() {
   function renderShop() {
     const shop = document.querySelector(".shop");
     if (!shop) return;
-    shop.innerHTML = "<h3>Loja</h3>";
-    const ul = document.createElement("div");
-    ul.className = "shop-items";
 
-    // Gerar itens dinamicamente baseados no game-config
-    for (const [towerType, config] of Object.entries(GAME_CONFIG.towerTypes)) {
-      const item = document.createElement("div");
-      item.className = "shop-item";
-      item.innerHTML = `
-        <div class="thumb" style="background-color: ${config.color}"></div>
-        <div class="meta">
-          <div><strong>${config.name}</strong></div>
-          <div>${config.description}</div>
-          <div>Preço: ${config.cost}</div>
+    shop.innerHTML = `
+      <div class="shop-header">
+        <h3>Loja de Torres</h3>
+        <div class="shop-tabs">
+          ${Object.entries(TOWER_CATEGORIES)
+            .map(
+              ([categoryId, category]) =>
+                `<button class="tab-button" data-category="${categoryId}">
+              ${category.icon} ${category.name}
+            </button>`
+            )
+            .join("")}
         </div>
-      `;
-      item.tabIndex = 0;
-      item.setAttribute("role", "button");
-      item.dataset.tower = towerType;
+      </div>
+      <div class="tab-content">
+        ${Object.entries(TOWER_CATEGORIES)
+          .map(
+            ([categoryId, category]) =>
+              `<div class="tab-pane" data-category="${categoryId}">
+            <div class="shop-items">
+              ${category.towers
+                .map((towerType) => {
+                  const config = GAME_CONFIG.towerTypes[towerType];
+                  if (!config) return "";
+                  return `
+                  <div class="shop-item" data-tower="${towerType}" tabindex="0" role="button">
+                    <div class="thumb" style="background-color: ${config.color}"></div>
+                    <div class="meta">
+                      <strong>${config.name}</strong>
+                      <div class="description">${config.description}</div>
+                      <div class="price">💰 ${config.cost}</div>
+                    </div>
+                  </div>
+                `;
+                })
+                .join("")}
+            </div>
+          </div>`
+          )
+          .join("")}
+      </div>
+    `;
+
+    setupShopTabs();
+    setupShopItems();
+  }
+
+  function setupShopTabs() {
+    const tabButtons = document.querySelectorAll(".tab-button");
+    const tabPanes = document.querySelectorAll(".tab-pane");
+
+    // Ativar primeira aba por padrão
+    if (tabButtons.length > 0 && tabPanes.length > 0) {
+      tabButtons[0].classList.add("active");
+      tabPanes[0].classList.add("active");
+    }
+
+    tabButtons.forEach((button) => {
+      button.addEventListener("click", () => {
+        const category = button.dataset.category;
+
+        // Remover classe active de todas as abas
+        tabButtons.forEach((btn) => btn.classList.remove("active"));
+        tabPanes.forEach((pane) => pane.classList.remove("active"));
+
+        // Ativar aba selecionada
+        button.classList.add("active");
+        const targetPane = document.querySelector(
+          `[data-category="${category}"].tab-pane`
+        );
+        if (targetPane) {
+          targetPane.classList.add("active");
+        }
+      });
+
+      // Suporte para navegação por teclado
+      button.addEventListener("keydown", (e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          button.click();
+        }
+      });
+    });
+  }
+
+  function setupShopItems() {
+    const shopItems = document.querySelectorAll(".shop-item");
+
+    shopItems.forEach((item) => {
+      const towerType = item.dataset.tower;
+
       item.addEventListener("click", () => select(towerType, item));
       item.addEventListener("keydown", (e) => {
-        if (e.key === "Enter") select(towerType, item);
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          select(towerType, item);
+        }
       });
-      ul.appendChild(item);
-    }
-    shop.appendChild(ul);
+    });
   }
 
   function select(type, el) {
     // toggle selection
     const prev = document.querySelector(".shop-item.selected");
     if (prev) prev.classList.remove("selected");
+
     if (gameAPI) {
       gameAPI.selectTowerType(type);
       el.classList.add("selected");

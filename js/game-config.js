@@ -285,24 +285,29 @@ export const GAME_CONFIG = {
 
   // Definições dos tipos de torres
   towerTypes: {
+    // === TORRES BÁSICAS ===
     basic: {
       cost: 40,
       range: 120,
-      fireRate: 1, // tiros por segundo
+      fireRate: 1,
       damage: 4,
       color: "#60a5fa",
       name: "Torre Básica",
       description: "Dano moderado. Alcance médio.",
+      category: "basic",
     },
+
     sniper: {
       cost: 80,
       range: 260,
-      fireRate: 0.5, // Corrigido: sniper deveria ter fireRate baixo
+      fireRate: 0.5,
       damage: 12,
       color: "#f97316",
       name: "Sniper",
       description: "Dano alto. Longo alcance. Cadência baixa.",
+      category: "basic",
     },
+
     rapid: {
       cost: 60,
       range: 100,
@@ -311,15 +316,238 @@ export const GAME_CONFIG = {
       color: "#10b981",
       name: "Torre Rápida",
       description: "Dano baixo. Cadência alta.",
+      category: "basic",
     },
-    laser: {
+
+    // === TORRES ELEMENTAIS ===
+    fire: {
+      cost: 100,
+      range: 140,
+      fireRate: 1.2,
+      damage: 6,
+      color: "#ef4444",
+      name: "Torre de Fogo",
+      description: "Causa dano em área. Efetiva contra enxames.",
+      category: "elemental",
+      splashRadius: 40,
+      splashDamage: 3,
+    },
+
+    ice: {
+      cost: 90,
+      range: 130,
+      fireRate: 0.8,
+      damage: 4,
+      color: "#60a5fa",
+      name: "Torre de Gelo",
+      description: "Reduz velocidade dos inimigos atingidos.",
+      category: "elemental",
+      slowEffect: 0.6, // reduz velocidade para 60%
+      slowDuration: 2.5, // segundos
+    },
+
+    lightning: {
+      cost: 110,
+      range: 150,
+      fireRate: 1.5,
+      damage: 7,
+      color: "#fbbf24",
+      name: "Torre de Raio",
+      description: "Atinge múltiplos inimigos em cadeia.",
+      category: "elemental",
+      chainTargets: 3,
+      chainDamageReduction: 0.7, // 30% menos dano a cada salto
+    },
+
+    // === TORRES ESPECIALIZADAS ===
+    antiair: {
+      cost: 85,
+      range: 180,
+      fireRate: 2.0,
+      damage: 5,
+      color: "#06b6d4",
+      name: "Torre Antiaérea",
+      description: "Especializada em inimigos voadores. Ignora terrestres.",
+      category: "specialized",
+      airOnly: true,
+      bonusDamageFlying: 4, // +4 dano contra voadores
+    },
+
+    armor_pierce: {
       cost: 120,
+      range: 160,
+      fireRate: 0.7,
+      damage: 8,
+      color: "#8b5cf6",
+      name: "Torre Perfurante",
+      description: "Ignora completamente armadura inimiga.",
+      category: "specialized",
+      armorPiercing: true,
+      bonusDamageArmored: 6,
+    },
+
+    detector: {
+      cost: 75,
+      range: 200,
+      fireRate: 1.8,
+      damage: 3,
+      color: "#34d399",
+      name: "Torre Detectora",
+      description: "Revela inimigos stealth e os marca para outras torres.",
+      category: "specialized",
+      detectStealth: true,
+      markingRadius: 250,
+      markingDuration: 5,
+    },
+
+    // === TORRES TÁTICAS ===
+    poison: {
+      cost: 95,
+      range: 120,
+      fireRate: 1.0,
+      damage: 2,
+      color: "#4d7c0f",
+      name: "Torre Venenosa",
+      description: "Aplica veneno que causa dano contínuo.",
+      category: "tactical",
+      poisonDPS: 3,
+      poisonDuration: 4,
+    },
+
+    slow: {
+      cost: 70,
+      range: 140,
+      fireRate: 1.5,
+      damage: 1,
+      color: "#64748b",
+      name: "Torre Ralentizadora",
+      description: "Foco em controle. Reduz drasticamente velocidade.",
+      category: "tactical",
+      slowEffect: 0.3, // reduz para 30% da velocidade
+      slowDuration: 3,
+    },
+
+    shield_breaker: {
+      cost: 130,
+      range: 150,
+      fireRate: 0.6,
+      damage: 10,
+      color: "#0ea5e9",
+      name: "Torre Quebra-Escudo",
+      description: "Causa dano extra a escudos e regeneração.",
+      category: "tactical",
+      shieldDamageMultiplier: 2.5,
+      stopRegen: true,
+    },
+
+    // === TORRES AVANÇADAS ===
+    laser: {
+      cost: 150,
       range: 180,
       fireRate: 1.8,
       damage: 8,
       color: "#a855f7",
       name: "Torre Laser",
       description: "Tecnologia avançada. Dano perfurante.",
+      category: "advanced",
+      armorPiercing: true,
+    },
+
+    missile: {
+      cost: 200,
+      range: 220,
+      fireRate: 0.4,
+      damage: 15,
+      color: "#dc2626",
+      name: "Torre de Mísseis",
+      description: "Mísseis teleguiados com grande área de explosão.",
+      category: "advanced",
+      splashRadius: 60,
+      splashDamage: 8,
+      homing: true,
+    },
+
+    plasma: {
+      cost: 180,
+      range: 160,
+      fireRate: 1.2,
+      damage: 12,
+      color: "#7c3aed",
+      name: "Torre de Plasma",
+      description: "Energia pura. Efetiva contra todos os tipos.",
+      category: "advanced",
+      energyDamage: true, // ignora resistências físicas
+      splashRadius: 30,
+    },
+
+    // === TORRES UTILITÁRIAS ===
+    support: {
+      cost: 80,
+      range: 180,
+      fireRate: 0,
+      damage: 0,
+      color: "#16a34a",
+      name: "Torre de Suporte",
+      description: "Aumenta alcance e dano de torres próximas.",
+      category: "utility",
+      supportRadius: 120,
+      damageBonus: 0.25, // +25% dano
+      rangeBonus: 0.15, // +15% alcance
+    },
+
+    economic: {
+      cost: 100,
+      range: 0,
+      fireRate: 0,
+      damage: 0,
+      color: "#f59e0b",
+      name: "Torre Econômica",
+      description: "Gera ouro passivamente ao longo do tempo.",
+      category: "utility",
+      goldPerSecond: 2,
+      goldPerKill: 3, // ouro extra por inimigos mortos próximos
+      economicRadius: 150,
+    },
+
+    repair: {
+      cost: 90,
+      range: 150,
+      fireRate: 2,
+      damage: 0,
+      color: "#06b6d4",
+      name: "Torre de Reparo",
+      description: "Repara outras torres e remove debuffs.",
+      category: "utility",
+      repairAmount: 10,
+      cleansesDebuffs: true,
+    },
+
+    // === TORRES FINAIS ===
+    orbital: {
+      cost: 300,
+      range: 999, // alcance infinito
+      fireRate: 0.2,
+      damage: 25,
+      color: "#1f2937",
+      name: "Canhão Orbital",
+      description: "Ataque devastador de longo alcance. Mira qualquer lugar.",
+      category: "ultimate",
+      splashRadius: 80,
+      splashDamage: 15,
+      globalRange: true,
+    },
+
+    tesla: {
+      cost: 250,
+      range: 120,
+      fireRate: 3,
+      damage: 4,
+      color: "#3b82f6",
+      name: "Bobina Tesla",
+      description: "Raios saltam entre todos os inimigos próximos.",
+      category: "ultimate",
+      chainAll: true, // atinge todos no alcance
+      maxChainTargets: 8,
     },
   },
 
@@ -341,6 +569,288 @@ export const GAME_CONFIG = {
       enemies: [{ type: "basic", count: 5 }],
       goldReward: 40,
       isBossWave: false,
+    },
+    {
+      id: 2,
+      enemies: [{ type: "basic", count: 8 }],
+      goldReward: 50,
+      isBossWave: false,
+    },
+    {
+      id: 3,
+      enemies: [{ type: "fast", count: 6 }],
+      goldReward: 60,
+      isBossWave: false,
+    },
+    {
+      id: 4,
+      enemies: [
+        { type: "basic", count: 6 },
+        { type: "fast", count: 4 },
+      ],
+      goldReward: 70,
+      isBossWave: false,
+    },
+
+    // Waves iniciais -> intermediárias
+    {
+      id: 5,
+      enemies: [
+        { type: "tank", count: 2 },
+        { type: "basic", count: 6 },
+      ],
+      goldReward: 85,
+      isBossWave: false,
+    },
+    {
+      id: 6,
+      enemies: [{ type: "fast", count: 10 }],
+      goldReward: 95,
+      isBossWave: false,
+    },
+    {
+      id: 7,
+      enemies: [{ type: "swarm", count: 16 }],
+      goldReward: 100,
+      isBossWave: false,
+    },
+    {
+      id: 8,
+      enemies: [
+        { type: "flying", count: 6 },
+        { type: "basic", count: 6 },
+      ],
+      goldReward: 110,
+      isBossWave: false,
+    },
+    {
+      id: 9,
+      enemies: [
+        { type: "armored", count: 2 },
+        { type: "fast", count: 8 },
+      ],
+      goldReward: 125,
+      isBossWave: false,
+    },
+    {
+      id: 10,
+      enemies: [
+        { type: "bomber", count: 6 },
+        { type: "basic", count: 8 },
+      ],
+      goldReward: 140,
+      isBossWave: false,
+    },
+
+    // Waves intermediárias -> avançadas
+    {
+      id: 11,
+      enemies: [
+        { type: "regen", count: 4 },
+        { type: "fast", count: 8 },
+      ],
+      goldReward: 155,
+      isBossWave: false,
+    },
+    {
+      id: 12,
+      enemies: [
+        { type: "healer", count: 3 },
+        { type: "basic", count: 10 },
+      ],
+      goldReward: 170,
+      isBossWave: false,
+    },
+    {
+      id: 13,
+      enemies: [
+        { type: "stealth", count: 6 },
+        { type: "fast", count: 6 },
+      ],
+      goldReward: 185,
+      isBossWave: false,
+    },
+    {
+      id: 14,
+      enemies: [
+        { type: "poison", count: 4 },
+        { type: "swarm", count: 12 },
+      ],
+      goldReward: 200,
+      isBossWave: false,
+    },
+    {
+      id: 15,
+      enemies: [
+        { type: "tank", count: 4 },
+        { type: "armored", count: 2 },
+      ],
+      goldReward: 220,
+      isBossWave: false,
+    },
+
+    // Waves avançadas - introduz spawner/spectral/sentinel
+    {
+      id: 16,
+      enemies: [
+        { type: "spawner", count: 2 },
+        { type: "swarm", count: 8 },
+      ],
+      goldReward: 240,
+      isBossWave: false,
+    },
+    {
+      id: 17,
+      enemies: [
+        { type: "spectral", count: 6 },
+        { type: "fast", count: 8 },
+      ],
+      goldReward: 260,
+      isBossWave: false,
+    },
+    {
+      id: 18,
+      enemies: [
+        { type: "sentinel", count: 2 },
+        { type: "basic", count: 10 },
+      ],
+      goldReward: 280,
+      isBossWave: false,
+    },
+    {
+      id: 19,
+      enemies: [
+        { type: "fast", count: 12 },
+        { type: "poison", count: 5 },
+      ],
+      goldReward: 300,
+      isBossWave: false,
+    },
+
+    // Primeira dificuldade forte - mini boss surge
+    {
+      id: 20,
+      enemies: [
+        { type: "mini_boss", count: 1 },
+        { type: "tank", count: 3 },
+        { type: "fast", count: 6 },
+      ],
+      goldReward: 360,
+      isBossWave: true,
+    },
+
+    // Pós-mini boss - mistura com support/regen/healer
+    {
+      id: 21,
+      enemies: [
+        { type: "regen", count: 6 },
+        { type: "healer", count: 2 },
+        { type: "swarm", count: 10 },
+      ],
+      goldReward: 380,
+      isBossWave: false,
+    },
+    {
+      id: 22,
+      enemies: [
+        { type: "armored", count: 4 },
+        { type: "basic", count: 12 },
+      ],
+      goldReward: 400,
+      isBossWave: false,
+    },
+    {
+      id: 23,
+      enemies: [
+        { type: "spawner", count: 3 },
+        { type: "spectral", count: 4 },
+        { type: "fast", count: 8 },
+      ],
+      goldReward: 420,
+      isBossWave: false,
+    },
+
+    // Segunda linha de mini-bosses e desafios pesados
+    {
+      id: 24,
+      enemies: [
+        { type: "mini_boss", count: 2 },
+        { type: "bomber", count: 6 },
+        { type: "poison", count: 6 },
+      ],
+      goldReward: 520,
+      isBossWave: true,
+    },
+    {
+      id: 25,
+      enemies: [
+        { type: "juggernaut", count: 1 },
+        { type: "armored", count: 5 },
+        { type: "fast", count: 8 },
+      ],
+      goldReward: 600,
+      isBossWave: true,
+    },
+
+    // Preparação final - ondas com muitos inimigos variados
+    {
+      id: 26,
+      enemies: [
+        { type: "tank", count: 8 },
+        { type: "fast", count: 12 },
+        { type: "swarm", count: 20 },
+      ],
+      goldReward: 680,
+      isBossWave: false,
+    },
+    {
+      id: 27,
+      enemies: [
+        { type: "boss_fire", count: 1 },
+        { type: "spawner", count: 2 },
+        { type: "spectral", count: 6 },
+      ],
+      goldReward: 900,
+      isBossWave: true,
+    },
+
+    // Wave final - Boss(es) principais
+    {
+      id: 28,
+      enemies: [
+        { type: "boss", count: 1 },
+        { type: "boss_ice", count: 1 },
+        { type: "tank", count: 6 },
+        { type: "fast", count: 10 },
+      ],
+      goldReward: 1500,
+      isBossWave: true,
+    },
+
+    // Nova wave 29 - desafio pesado pós-chefe
+    {
+      id: 29,
+      enemies: [
+        { type: "boss_fire", count: 1 },
+        { type: "spawner", count: 2 },
+        { type: "fast", count: 12 },
+        { type: "spectral", count: 6 },
+      ],
+      goldReward: 1700,
+      isBossWave: true,
+    },
+
+    // Nova wave 30 - Última onda: combinação extrema
+    {
+      id: 30,
+      enemies: [
+        { type: "boss", count: 1 },
+        { type: "juggernaut", count: 1 },
+        { type: "mini_boss", count: 1 },
+        { type: "swarm", count: 30 },
+      ],
+      goldReward: 2500,
+      isBossWave: true,
     },
   ],
 
