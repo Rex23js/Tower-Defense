@@ -12,6 +12,7 @@
 * {
   box-sizing: border-box;
 }
+
 html,
 body {
   height: 100%;
@@ -19,7 +20,9 @@ body {
   font-family: Inter, Arial, sans-serif;
   background: var(--page-bg);
   color: var(--text);
+  padding: 0;
 }
+
 a {
   color: inherit;
 }
@@ -30,6 +33,7 @@ a {
   background: transparent;
   padding: 18px 24px;
 }
+
 .header-inner {
   max-width: 1100px;
   margin: 0 auto;
@@ -37,10 +41,12 @@ a {
   align-items: center;
   justify-content: space-between;
 }
+
 .brand .logo {
   font-weight: 700;
   font-size: 1.1rem;
 }
+
 .main-nav .nav-btn {
   margin-left: 8px;
   padding: 8px 12px;
@@ -52,20 +58,27 @@ a {
 
 /* Pages wrapper */
 .page {
-  max-width: 1100px;
-  margin: 28px auto;
-  padding: 0 18px;
+  --header-height: 72px;
+
+  width: 100vw;
+  max-width: 100%;
+  margin: 0;
+
+  min-height: calc(100vh - var(--header-height));
+
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  overflow: auto;
 }
 
 /* HOME / Hero - Refinado */
 .hero {
-  /* Limita a largura e centraliza para melhor legibilidade */
   max-width: 700px;
   margin: 4rem auto;
   padding: 3rem;
   text-align: center;
 
-  /* Adiciona a estética de "painel" wireframe */
   background-color: var(--panel);
   border: 1px solid rgba(0, 0, 0, 0.08);
   border-radius: 8px;
@@ -75,7 +88,6 @@ a {
   font-size: 2.8rem;
   font-weight: 700;
   margin-bottom: 1rem;
-  /* Melhora a "respirabilidade" do título */
   letter-spacing: -0.5px;
 }
 
@@ -87,9 +99,7 @@ a {
   line-height: 1.6;
 }
 
-/* Botão primário refinado com estilo "fantasma" */
 .primary {
-  /* Estilo de botão "fantasma" para estética wireframe */
   background-color: transparent;
   color: var(--accent);
   border: 2px solid var(--accent);
@@ -100,34 +110,45 @@ a {
   font-weight: 600;
   cursor: pointer;
 
-  /* Transição suave para o hover */
   transition: background-color 0.2s ease-in-out, color 0.2s ease-in-out;
 }
 
 .primary:hover {
-  /* Inverte as cores no hover para feedback claro */
   background-color: var(--accent);
   color: var(--bg);
 }
 
-/* Game layout */
+/* ===== Layout principal: shop + game lado a lado ===== */
 .game-wrap {
+  width: 100vw;
+  height: calc(
+    100vh - 72px
+  ); /* 72px = altura aproximada do header, ajuste se necessário */
+  margin: 0;
+  padding: 16px;
   display: grid;
-  grid-template-columns: 280px 1fr;
+  grid-template-columns: minmax(200px, clamp(220px, 18vw, 320px)) 1fr;
   gap: 18px;
-  align-items: start;
+  box-sizing: border-box;
+  align-items: stretch;
+  background: transparent; /* página por trás mantém sua cor se quiser */
 }
-
-/* Shop with tabs */
+/* Shop com tamanho otimizado */
 .shop {
   background: var(--panel);
-  border-radius: 6px;
-  min-height: 640px;
-  overflow: hidden;
+  border-radius: 8px;
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  display: flex;
+  flex-direction: column;
+  min-height: 0; /* importante pra permitir overflow interno */
+  max-width: 420px; /* defesa contra lojas gigantes */
+  padding: 0;
 }
 
+/* Cabeçalho da loja (titulo + abas) */
 .shop-header {
-  padding: 16px 14px 0;
+  padding: 14px;
+  flex-shrink: 0;
 }
 
 .shop-header h3 {
@@ -136,26 +157,27 @@ a {
   font-weight: 600;
 }
 
-/* Tabs Navigation */
+/* Tabs Navigation - Layout em 2 colunas */
 .shop-tabs {
-  display: flex;
-  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
-  margin: 0 -14px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-bottom: 16px;
 }
 
 .tab-button {
-  flex: 1;
   padding: 10px 8px;
   border: none;
-  background: transparent;
+  background: #f3f4f6;
+  border-radius: 6px;
   cursor: pointer;
   font-size: 11px;
   font-weight: 500;
   color: var(--muted);
   transition: all 0.2s ease;
-  border-bottom: 2px solid transparent;
   text-transform: uppercase;
-  letter-spacing: 0.5px;
+  letter-spacing: 0.3px;
+  text-align: center;
 }
 
 .tab-button:hover {
@@ -164,16 +186,16 @@ a {
 }
 
 .tab-button.active {
-  color: var(--tab-active);
-  border-bottom-color: var(--tab-active);
-  background-color: rgba(59, 130, 246, 0.05);
+  background: var(--accent);
+  color: white;
 }
 
 /* Tab Content */
 .tab-content {
-  padding: 14px;
-  height: calc(640px - 120px);
+  padding: 0 16px 16px;
+  flex: 1;
   overflow-y: auto;
+  min-height: 0;
 }
 
 .tab-content::-webkit-scrollbar {
@@ -265,44 +287,74 @@ a {
   background-color: rgba(59, 130, 246, 0.05);
 }
 
-/* Game area */
+/* Game area - Ocupa o espaço restante */
 .game-area {
   display: flex;
   flex-direction: column;
+  min-height: 0;
   gap: 12px;
 }
+
+/* topbar dentro do game permanece visível e tem fundo translúcido */
 .game-topbar {
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 6px;
+  padding: 10px;
   display: flex;
   justify-content: space-between;
   align-items: center;
-}
-.hud-inline span {
-  margin-right: 12px;
-  font-weight: 600;
-}
-.controls-inline button {
-  margin-left: 8px;
-  padding: 8px 10px;
-  border-radius: 6px;
-  border: 1px solid rgba(0, 0, 0, 0.08);
-  cursor: pointer;
+  z-index: 2;
 }
 
-/* Canvas box */
-.canvas-wrap {
-  background: #fff;
-  padding: 12px;
-  border-radius: 6px;
-  border: 1px solid rgba(0, 0, 0, 0.06);
-  display: flex;
-  justify-content: center;
-  align-items: center;
+.hud-inline span {
+  margin-right: 16px;
+  font-weight: 600;
+  font-size: 14px;
 }
+
+.controls-inline button {
+  margin-left: 8px;
+  padding: 8px 12px;
+  border-radius: 6px;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  background: white;
+  cursor: pointer;
+  font-size: 12px;
+  transition: all 0.2s ease;
+}
+
+.controls-inline button:hover {
+  background: var(--panel);
+  transform: translateY(-1px);
+}
+
+/* Canvas - Ocupa todo o espaço restante */
+/* Canvas: ocupa todo o espaço restante dentro de .game-area */
+.canvas-wrap {
+  flex: 1 1 auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6px;
+  min-height: 0;
+  overflow: hidden;
+  background: #000; /* garante continuidade quando canvas tem gap */
+  border-radius: 6px;
+}
+
+/* Canvas responsivo: preenche o container visualmente */
+.canvas-wrap > canvas {
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: contain;
+  background: transparent;
+}
+
 canvas {
   display: block;
   max-width: 100%;
   height: auto;
-  border: 1px solid rgba(0, 0, 0, 0.03);
 }
 
 /* Scores */
@@ -312,6 +364,7 @@ canvas {
   border-radius: 6px;
   text-align: center;
 }
+
 .scores-box ol {
   list-style: decimal;
   margin: 20px auto 0;
@@ -327,17 +380,6 @@ canvas {
   border-radius: 6px;
   margin-bottom: 18px;
   background: #fff;
-}
-
-/* Footer */
-.site-footer {
-  border-top: 1px solid rgba(0, 0, 0, 0.06);
-  padding: 18px 0;
-  margin-top: 30px;
-}
-.footer-inner {
-  text-align: center;
-  color: var(--muted);
 }
 
 /* Focus for accessibility */
@@ -456,23 +498,66 @@ button:focus,
   transform: translateY(-1px);
 }
 
-/* Responsive */
+/* Ajustes menores: tornar a loja menor em telas maiores (manter leitura) */
+@media (min-width: 1500px) {
+  .game-wrap {
+    grid-template-columns: 280px 1fr;
+  }
+}
+
+/* Em telas pequenas: empilha loja encima do jogo, mas loja não fica gigante */
 @media (max-width: 900px) {
   .game-wrap {
-    grid-template-columns: 1fr;
+    display: block;
+    height: auto;
+    padding: 12px;
   }
   .shop {
-    min-height: auto;
+    margin-bottom: 12px;
+    max-height: 420px;
+    overflow: auto;
   }
-  .shop-items {
-    grid-template-columns: repeat(3, 1fr);
+
+  .game-area {
+    border-radius: 6px;
+    padding: 10px;
   }
+  .canvas-wrap > canvas {
+    height: 480px; /* limitação segura em mobile para não explodir layout */
+  }
+}
+
+.shop-items {
+  grid-template-columns: repeat(3, 1fr);
+}
+
+.shop-tabs {
+  grid-template-columns: repeat(3, 1fr);
+}
+
+@media (max-width: 600px) {
   .hero-title {
     font-size: 28px;
   }
+
   .hero {
     max-width: 90%;
     margin: 2rem auto;
     padding: 2rem;
+  }
+
+  .shop-tabs {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .game-topbar {
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .hud-inline {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
   }
 }
