@@ -5,24 +5,95 @@ import { GAME_CONFIG } from "./game-config.js";
 let gameAPI = null;
 let waveManager = null;
 
-// Categorias das torres para organização em abas
-const TOWER_CATEGORIES = {
-  basic: {
-    name: "Básicas",
-    icon: "🏰",
-    towers: ["fire", "ice", "lightning"],
-  },
-  special: {
-    name: "Especiais",
-    icon: "⚡",
-    towers: ["antiair", "piercing", "detector"],
-  },
-  advanced: {
-    name: "Avançadas",
-    icon: "🚀",
-    towers: ["poison", "slow", "shield", "laser"],
-  },
-};
+// Categorias das torres geradas dinamicamente a partir do GAME_CONFIG.towerTypes
+// Agrupamento mais compacto: reduz o número de abas combinando categorias semelhantes
+const TOWER_CATEGORIES = (() => {
+  const types =
+    GAME_CONFIG && GAME_CONFIG.towerTypes ? GAME_CONFIG.towerTypes : {};
+  const iconMap = {
+    basic: "🏰",
+    offense: "⚔️",
+    support: "🛡️",
+    antiair: "🛩️",
+    magic: "🔮",
+    special: "✨",
+    other: "🔧",
+  };
+
+  const categories = {};
+
+  const normalizeCategory = (raw) => {
+    if (!raw) return "basic";
+    const s = String(raw).toLowerCase();
+
+    // Antiaéreo fica isolado
+    if (s.match(/air|antiair|aa/)) return "antiair";
+
+    // Suporte e debuffs / slow / heal / detector => suporte
+    if (s.match(/support|utility|buff|heal|detector|shield|slow|debuff/))
+      return "support";
+
+    // Magic / elemental ficam juntos
+    if (s.match(/magic|elemental|fire|ice|lightning|poison/)) return "magic";
+
+    // Offense: dano, piercing, laser, projectile, splash, advanced, elite => agrupados
+    if (
+      s.match(
+        /pierce|piercing|projectile|bullet|laser|splash|aoe|damage|dps|advanced|elite|high|tier/
+      )
+    )
+      return "offense";
+
+    // Special / unique / boss => especial
+    if (s.match(/special|unique|boss/)) return "special";
+
+    // Basic / starter / default
+    if (s.match(/basic|starter|default/)) return "basic";
+
+    return s || "other";
+  };
+
+  Object.entries(types).forEach(([key, cfg]) => {
+    // Priorizar propriedade explícita de categoria, depois type, depois tags
+    const rawCategory =
+      cfg.category ||
+      cfg.type ||
+      (Array.isArray(cfg.tags) && cfg.tags[0]) ||
+      null;
+    const cat = normalizeCategory(rawCategory);
+
+    if (!categories[cat]) {
+      categories[cat] = {
+        name: cat.charAt(0).toUpperCase() + cat.slice(1),
+        icon: iconMap[cat] || iconMap.other,
+        towers: [],
+      };
+    }
+
+    categories[cat].towers.push(key);
+  });
+
+  // Ordem preferida mais compacta
+  const preferredOrder = [
+    "basic",
+    "offense",
+    "support",
+    "antiair",
+    "magic",
+    "special",
+  ];
+
+  const ordered = {};
+  preferredOrder.forEach((id) => {
+    if (categories[id]) ordered[id] = categories[id];
+  });
+  // adicionar quaisquer categorias restantes
+  Object.keys(categories).forEach((id) => {
+    if (!ordered[id]) ordered[id] = categories[id];
+  });
+
+  return ordered;
+})();
 
 export function bindUI() {
   function renderShop() {
@@ -30,30 +101,60 @@ export function bindUI() {
     if (!shop) return;
 
     shop.innerHTML = `
+      <style>
+      /* Fazer as abas quebrarem em linhas e formar duas "colunas" por linha */
+      .shop .shop-tabs {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+      }
+      .shop .shop-tabs .tab-button {
+        /* duas colunas por linha: cada botão ocupa ~50% menos o gap */
+        flex: 0 0 calc(50% - 8px);
+        box-sizing: border-box;
+        padding: 8px 10px;
+        text-align: left;
+        border: none;
+        background: #f3f4f6;
+        border-radius: 6px;
+        cursor: pointer;
+      }
+      .shop .shop-tabs .tab-button.active {
+        background: #111827;
+        color: #fff;
+      }
+      /* Em telas pequenas, empilhar em uma coluna */
+      @media (max-width: 480px) {
+        .shop .shop-tabs .tab-button {
+        flex: 0 0 100%;
+        }
+      }
+      </style>
+
       <div class="shop-header">
-        <h3>Loja de Torres</h3>
-        <div class="shop-tabs">
-          ${Object.entries(TOWER_CATEGORIES)
-            .map(
-              ([categoryId, category]) =>
-                `<button class="tab-button" data-category="${categoryId}">
-              ${category.icon} ${category.name}
-            </button>`
-            )
-            .join("")}
-        </div>
-      </div>
-      <div class="tab-content">
+      <h3>Loja de Torres</h3>
+      <div class="shop-tabs">
         ${Object.entries(TOWER_CATEGORIES)
           .map(
             ([categoryId, category]) =>
-              `<div class="tab-pane" data-category="${categoryId}">
-            <div class="shop-items">
-              ${category.towers
-                .map((towerType) => {
-                  const config = GAME_CONFIG.towerTypes[towerType];
-                  if (!config) return "";
-                  return `
+              `<button class="tab-button" data-category="${categoryId}">
+          ${category.icon} ${category.name}
+        </button>`
+          )
+          .join("")}
+      </div>
+      </div>
+      <div class="tab-content">
+      ${Object.entries(TOWER_CATEGORIES)
+        .map(
+          ([categoryId, category]) =>
+            `<div class="tab-pane" data-category="${categoryId}">
+        <div class="shop-items">
+          ${category.towers
+            .map((towerType) => {
+              const config = GAME_CONFIG.towerTypes[towerType];
+              if (!config) return "";
+              return `
                   <div class="shop-item" data-tower="${towerType}" tabindex="0" role="button">
                     <div class="thumb" style="background-color: ${config.color}"></div>
                     <div class="meta">
@@ -63,12 +164,12 @@ export function bindUI() {
                     </div>
                   </div>
                 `;
-                })
-                .join("")}
+            })
+            .join("")}
             </div>
           </div>`
-          )
-          .join("")}
+        )
+        .join("")}
       </div>
     `;
 
