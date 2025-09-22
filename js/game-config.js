@@ -855,12 +855,18 @@ export const GAME_CONFIG = {
   ],
 
   visual: {
-    backgroundColor: "#f8fafc", // tema claro
-    pathColor: "#ffffff",
-    pathBorderColor: "#e6e6e6",
+    // fundo do jogo (CSS pixels)
+    backgroundColor: "#0b1320", // fundo escuro
+    // cores e larguras do caminho (use esses pra ver o contraste)
+    pathColor: "#1a1a1a", // cor do corpo do caminho (escuro)
+    pathBorderColor: "#ffffff", // borda externa clara
     pathWidth: 48,
     pathBorderWidth: 3,
     pathRadiusBlock: 32,
+    // central dash
+    pathCenterDash: [8, 8],
+    pathCenterColor: "rgba(255,255,255,0.15)",
+    // base
     baseColor: "#111827",
     baseStripeColor: "#f3f4f6",
   },

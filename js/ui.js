@@ -101,36 +101,7 @@ export function bindUI() {
     if (!shop) return;
 
     shop.innerHTML = `
-      <style>
-      /* Fazer as abas quebrarem em linhas e formar duas "colunas" por linha */
-      .shop .shop-tabs {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 8px;
-      }
-      .shop .shop-tabs .tab-button {
-        /* duas colunas por linha: cada botão ocupa ~50% menos o gap */
-        flex: 0 0 calc(50% - 8px);
-        box-sizing: border-box;
-        padding: 8px 10px;
-        text-align: left;
-        border: none;
-        background: #f3f4f6;
-        border-radius: 6px;
-        cursor: pointer;
-      }
-      .shop .shop-tabs .tab-button.active {
-        background: #111827;
-        color: #fff;
-      }
-      /* Em telas pequenas, empilhar em uma coluna */
-      @media (max-width: 480px) {
-        .shop .shop-tabs .tab-button {
-        flex: 0 0 100%;
-        }
-      }
-      </style>
-
+      
       <div class="shop-header">
       <h3>Loja de Torres</h3>
       <div class="shop-tabs">

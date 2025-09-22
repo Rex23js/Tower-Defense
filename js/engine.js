@@ -96,63 +96,81 @@ function distanceToPath(point, pathPoints) {
   return best;
 }
 
+// Sistema de canvas estável - sem loops de redimensionamento
+function setupStableCanvas(canvas) {
+  const container = canvas.parentElement;
+  let lastWidth = 0;
+  let lastHeight = 0;
+
+  function updateCanvasSize() {
+    const containerRect = container.getBoundingClientRect();
+    const newWidth = Math.max(300, Math.floor(containerRect.width));
+    const newHeight = Math.max(200, Math.floor(containerRect.height));
+
+    // Só atualizar se realmente mudou significativamente
+    if (
+      Math.abs(newWidth - lastWidth) < 2 &&
+      Math.abs(newHeight - lastHeight) < 2
+    ) {
+      return null; // Sem mudança significativa
+    }
+
+    lastWidth = newWidth;
+    lastHeight = newHeight;
+
+    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+
+    // Aplicar tamanhos sem trigger de novos eventos
+    canvas.style.width = newWidth + "px";
+    canvas.style.height = newHeight + "px";
+    canvas.width = Math.floor(newWidth * dpr);
+    canvas.height = Math.floor(newHeight * dpr);
+
+    const ctx = canvas.getContext("2d");
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctx.imageSmoothingEnabled = true;
+    ctx.imageSmoothingQuality = "high";
+
+    return { cssW: newWidth, cssH: newHeight, dpr, ctx };
+  }
+
+  return updateCanvasSize();
+}
+
+// Gera waypoints estáveis e proporcionais
+function generateStableWaypoints(cssW, cssH) {
+  const margin = Math.min(cssW, cssH) * 0.08;
+  const segmentW = (cssW - margin * 2) / 6;
+  const segmentH = (cssH - margin * 2) / 4;
+
+  return [
+    { x: margin, y: cssH - margin },
+    { x: margin + segmentW * 1.2, y: cssH - margin },
+    { x: margin + segmentW * 1.2, y: cssH - margin - segmentH * 1.5 },
+    { x: margin + segmentW * 2.8, y: cssH - margin - segmentH * 1.5 },
+    { x: margin + segmentW * 2.8, y: margin + segmentH * 0.5 },
+    { x: margin + segmentW * 1.5, y: margin + segmentH * 0.5 },
+    { x: margin + segmentW * 1.5, y: cssH - margin - segmentH * 2.8 },
+    { x: margin + segmentW * 4, y: cssH - margin - segmentH * 2.8 },
+    { x: margin + segmentW * 4, y: cssH - margin - segmentH * 1.8 },
+    { x: margin + segmentW * 5.2, y: cssH - margin - segmentH * 1.8 },
+    { x: margin + segmentW * 5.2, y: margin + segmentH * 1.2 },
+    { x: cssW - margin, y: margin + segmentH * 1.2 },
+  ];
+}
+
 // ---- engine (init) ----
 export async function initEngine(canvas) {
   if (!canvas) return;
-  const ctx = canvas.getContext("2d");
-  canvas.width = 960;
-  canvas.height = 640;
 
-  // Novo caminho inspirado na imagem: da direita para esquerda com curvas quadradas
-  const waypoints = [
-    // BASE (esquerda - final do caminho)
-    { x: 60, y: canvas.height - 80 },
+  // Configuração inicial estável
+  let canvasData = setupStableCanvas(canvas);
+  if (!canvasData) return; // Falha na configuração inicial
 
-    // Primeira seção horizontal
-    { x: 200, y: canvas.height - 80 },
+  let { cssW, cssH, dpr, ctx } = canvasData;
 
-    // Curva para cima
-    { x: 200, y: canvas.height - 200 },
-
-    // Seção horizontal para direita
-    { x: 350, y: canvas.height - 200 },
-
-    // Curva para cima
-    { x: 350, y: canvas.height - 350 },
-
-    // Seção para esquerda
-    { x: 180, y: canvas.height - 350 },
-
-    // Curva para cima
-    { x: 180, y: 200 },
-
-    // Seção longa para direita
-    { x: 500, y: 200 },
-
-    // Curva para baixo
-    { x: 500, y: 350 },
-
-    // Seção para direita
-    { x: 700, y: 350 },
-
-    // Curva final para cima em direção ao spawn
-    { x: 700, y: 120 },
-
-    // SPAWN POINT (direita - início do caminho)
-    { x: canvas.width - 40, y: 120 },
-  ];
-
-  // Usar menos amostras para manter as curvas mais quadradas
-  const pathPoints = waypoints; //buildSmoothPath(waypoints, 4);
-  const pathObj = buildPathDistances(pathPoints);
-
-  const base = {
-    centerX: waypoints[0].x,
-    centerY: waypoints[0].y,
-    width: GAME_CONFIG.base.width,
-    height: GAME_CONFIG.base.height,
-    hp: GAME_CONFIG.base.hp,
-  };
+  // Estado inicial fixo
+  const initialWaypoints = generateStableWaypoints(cssW, cssH);
 
   const state = {
     enemies: [],
@@ -164,24 +182,43 @@ export async function initEngine(canvas) {
     running: true,
     selectedTowerType: null,
     canvas,
-    pathPoints,
-    pathObj,
-    waypoints,
-    base,
+    // Elementos estáticos que não mudam durante o jogo
+    waypoints: initialWaypoints,
+    pathPoints: buildSmoothPath(initialWaypoints, PATH_SAMPLE_PER_SEG),
+    pathObj: null, // será calculado após pathPoints
+    base: {
+      centerX: initialWaypoints[0].x,
+      centerY: initialWaypoints[0].y,
+      width: Math.min(cssW, cssH) * 0.12,
+      height: Math.min(cssW, cssH) * 0.12,
+      hp: GAME_CONFIG.base.hp,
+    },
     decorations: [],
+    // Dimensões atuais
+    cssW,
+    cssH,
+    dpr,
+    // Flag para controlar recalculamentos
+    needsRecalc: false,
   };
 
-  // gerar decorações (pedras/cactos) fora do caminho
-  function seedDecorations() {
+  // Calcular pathObj após pathPoints estar definido
+  state.pathObj = buildPathDistances(state.pathPoints);
+
+  // Gerar decorações uma vez
+  function generateDecorations() {
     const decs = [];
-    const tries = 90;
+    const density = Math.floor((cssW * cssH) / 12000);
+    const tries = Math.max(30, Math.min(150, density));
+
     for (let i = 0; i < tries; i++) {
-      const px = 40 + Math.random() * (canvas.width - 80);
-      const py = 40 + Math.random() * (canvas.height - 80);
+      const margin = Math.min(cssW, cssH) * 0.05;
+      const px = margin + Math.random() * (cssW - margin * 2);
+      const py = margin + Math.random() * (cssH - margin * 2);
       const d = distanceToPath({ x: px, y: py }, state.pathPoints);
-      // só coloca se estiver distante o suficiente do caminho e da base
-      if (d > PATH_RADIUS_BLOCK + 30) {
-        const r = 6 + Math.random() * 20;
+
+      if (d > PATH_RADIUS_BLOCK + 25) {
+        const r = 4 + Math.random() * Math.min(cssW, cssH) * 0.025;
         decs.push({
           x: px,
           y: py,
@@ -190,13 +227,14 @@ export async function initEngine(canvas) {
         });
       }
     }
-    state.decorations = decs;
+    return decs;
   }
-  seedDecorations();
+
+  state.decorations = generateDecorations();
 
   const waveManager = new WaveManager();
 
-  // Public API para UI
+  // Public API
   GameAPI = {
     placeTowerAt: (x, y, type) => {
       const towerConfig = GAME_CONFIG.towerTypes[type];
@@ -204,16 +242,17 @@ export async function initEngine(canvas) {
       if (state.gold < towerConfig.cost)
         return { ok: false, reason: "ouro insuficiente" };
 
-      // impede construir sobre o base box
+      // Verificar colisão com base
       const baseLeft = state.base.centerX - state.base.width / 2;
       const baseRight = state.base.centerX + state.base.width / 2;
       const baseTop = state.base.centerY - state.base.height / 2;
       const baseBottom = state.base.centerY + state.base.height / 2;
+
       if (x >= baseLeft && x <= baseRight && y >= baseTop && y <= baseBottom) {
         return { ok: false, reason: "não pode construir sobre a base" };
       }
 
-      // impede construir sobre o caminho
+      // Verificar distância do caminho
       const dToPath = distanceToPath({ x, y }, state.pathPoints);
       if (dToPath < PATH_RADIUS_BLOCK)
         return { ok: false, reason: "não pode construir no caminho" };
@@ -231,124 +270,128 @@ export async function initEngine(canvas) {
 
     togglePause: () => {
       state.running = !state.running;
-      if (state.running) {
-        waveManager.resumeGame();
-      } else {
-        waveManager.pauseGame();
-      }
+      if (state.running) waveManager.resumeGame();
+      else waveManager.pauseGame();
     },
 
     setAutoWaves: (enabled) => waveManager.setAutoWaves(enabled),
-
     toggleAutoWaves: () => waveManager.toggleAutoWaves(),
-
     getWaveStatus: () => waveManager.getStatus(),
-
     getState: () => state,
-
-    // Novo: expor WaveManager para a UI
     getWaveManager: () => waveManager,
   };
 
-  // carregar waves via API
+  // Carregar waves
   try {
     state.waves = await getWaves();
     waveManager.initialize(state.waves);
   } catch (e) {
     console.warn("Falha ao carregar waves; usando configuração local", e);
-    // Usar configuração local do game-config.js
     waveManager.initialize(GAME_CONFIG.waveDefinitions);
   }
 
-  // override spawnEnemy para usar Enemy importada
   waveManager.spawnEnemy = (type, gameState) => {
     const startDistance = gameState.pathObj.total + 24 + Math.random() * 60;
     const e = new Enemy(type, startDistance, gameState.pathObj);
     gameState.enemies.push(e);
   };
 
-  // Desenhar grid de fundo
+  // Funções de renderização (sem mudanças nas dimensões)
   function drawGrid(ctx) {
-    const step = 32;
+    const step = Math.max(
+      16,
+      Math.min(40, Math.min(state.cssW, state.cssH) / 25)
+    );
     ctx.save();
-    // very subtle grid
-    ctx.globalAlpha = 0.06;
+    ctx.globalAlpha = 0.08;
     ctx.strokeStyle = "#ffffff";
-    for (let x = 0; x < canvas.width; x += step) {
+    ctx.lineWidth = 0.5;
+
+    for (let x = 0; x <= state.cssW; x += step) {
       ctx.beginPath();
       ctx.moveTo(x + 0.5, 0);
-      ctx.lineTo(x + 0.5, canvas.height);
+      ctx.lineTo(x + 0.5, state.cssH);
       ctx.stroke();
     }
-    for (let y = 0; y < canvas.height; y += step) {
+    for (let y = 0; y <= state.cssH; y += step) {
       ctx.beginPath();
       ctx.moveTo(0, y + 0.5);
-      ctx.lineTo(canvas.width, y + 0.5);
+      ctx.lineTo(state.cssW, y + 0.5);
       ctx.stroke();
     }
     ctx.restore();
   }
 
-  // Desenhar decorações (pedras / cactos)
   function renderDecorations(ctx) {
     for (const d of state.decorations) {
+      ctx.save();
+      ctx.globalAlpha = 0.12;
+
       if (d.type === "rock") {
-        ctx.save();
-        ctx.fillStyle = "rgba(255,255,255,0.06)";
+        ctx.fillStyle = "#ffffff";
         ctx.beginPath();
         ctx.ellipse(d.x, d.y, d.r, d.r * 0.7, 0, 0, Math.PI * 2);
         ctx.fill();
-        ctx.restore();
       } else {
-        // cactus (simple)
-        ctx.save();
-        ctx.fillStyle = "rgba(255,255,255,0.06)";
-        ctx.fillRect(d.x - 4, d.y - 10, 8, 20);
-        ctx.fillRect(d.x - 10, d.y - 6, 6, 4);
-        ctx.fillRect(d.x + 4, d.y - 6, 6, 4);
-        ctx.restore();
+        ctx.fillStyle = "#ffffff";
+        const w = d.r * 0.4;
+        const h = d.r * 1.2;
+        ctx.fillRect(d.x - w / 2, d.y - h / 2, w, h);
+        ctx.fillRect(d.x - d.r * 0.8, d.y - w / 2, w * 0.7, w);
+        ctx.fillRect(d.x + d.r * 0.1, d.y - w / 2, w * 0.7, w);
       }
+      ctx.restore();
     }
   }
 
-  // render path com estilo mais quadrado e preto/branco
   function renderPath(ctx, pathPoints) {
     if (!pathPoints || pathPoints.length < 2) return;
+
+    const pathWidth = Math.max(
+      30,
+      Math.min(60, Math.min(state.cssW, state.cssH) / 15)
+    );
+    const borderWidth = Math.max(2, pathWidth * 0.08);
+
     ctx.save();
 
-    // Caminho principal mais largo e escuro
+    // Caminho principal
     ctx.beginPath();
     ctx.moveTo(pathPoints[0].x, pathPoints[0].y);
-    for (let i = 1; i < pathPoints.length; i++)
+    for (let i = 1; i < pathPoints.length; i++) {
       ctx.lineTo(pathPoints[i].x, pathPoints[i].y);
+    }
 
-    ctx.lineWidth = 50; // Caminho mais largo
-    ctx.strokeStyle = "#1a1a1a"; // Cinza muito escuro
-    ctx.lineCap = "square";
-    ctx.lineJoin = "miter"; // Junções quadradas
+    ctx.lineWidth = pathWidth;
+    ctx.strokeStyle = GAME_CONFIG.visual.pathColor || "#1a1a1a";
+    ctx.lineCap = "round";
+    ctx.lineJoin = "round";
     ctx.stroke();
 
-    // Bordas brancas para contraste
+    // Borda do caminho
     ctx.beginPath();
     ctx.moveTo(pathPoints[0].x, pathPoints[0].y);
-    for (let i = 1; i < pathPoints.length; i++)
+    for (let i = 1; i < pathPoints.length; i++) {
       ctx.lineTo(pathPoints[i].x, pathPoints[i].y);
+    }
 
-    ctx.lineWidth = 54; // Ligeiramente maior para criar borda
+    ctx.lineWidth = pathWidth + borderWidth * 2;
     ctx.strokeStyle = "#ffffff";
     ctx.globalCompositeOperation = "destination-over";
     ctx.stroke();
-
     ctx.globalCompositeOperation = "source-over";
 
-    // Linha central pontilhada sutil
+    // Linha central
     ctx.beginPath();
     ctx.moveTo(pathPoints[0].x, pathPoints[0].y);
-    for (let i = 1; i < pathPoints.length; i++)
+    for (let i = 1; i < pathPoints.length; i++) {
       ctx.lineTo(pathPoints[i].x, pathPoints[i].y);
-    ctx.setLineDash([8, 8]);
-    ctx.lineWidth = 2;
-    ctx.strokeStyle = "rgba(255,255,255,0.15)";
+    }
+
+    const dashSize = Math.max(4, pathWidth / 8);
+    ctx.setLineDash([dashSize, dashSize]);
+    ctx.lineWidth = Math.max(1, pathWidth / 20);
+    ctx.strokeStyle = "rgba(255,255,255,0.2)";
     ctx.stroke();
     ctx.setLineDash([]);
 
@@ -358,6 +401,7 @@ export async function initEngine(canvas) {
   function renderBase(ctx, base) {
     const left = base.centerX - base.width / 2;
     const top = base.centerY - base.height / 2;
+    const crossSize = base.width * 0.3;
 
     ctx.save();
 
@@ -365,54 +409,88 @@ export async function initEngine(canvas) {
     ctx.fillStyle = "#2a2a2a";
     ctx.fillRect(left, top, base.width, base.height);
 
-    // Borda branca
+    // Borda
     ctx.strokeStyle = "#ffffff";
-    ctx.lineWidth = 3;
+    ctx.lineWidth = Math.max(2, base.width / 30);
     ctx.strokeRect(left, top, base.width, base.height);
 
-    // Detalhes internos
+    // Cruz médica
     ctx.fillStyle = "#ffffff";
-    ctx.fillRect(left + 20, top + 40, base.width - 40, 20);
-    ctx.fillRect(left + 40, top + 20, 20, base.height - 40);
+    // Horizontal
+    ctx.fillRect(
+      base.centerX - crossSize / 2,
+      base.centerY - crossSize / 6,
+      crossSize,
+      crossSize / 3
+    );
+    // Vertical
+    ctx.fillRect(
+      base.centerX - crossSize / 6,
+      base.centerY - crossSize / 2,
+      crossSize / 3,
+      crossSize
+    );
 
     ctx.restore();
   }
 
-  // update & render
+  // Update loop (sem alterações de layout)
   let last = performance.now();
 
   function update(dt) {
     if (!state.running) return;
 
+    // Verificar se precisa recalcular layout (apenas uma vez por mudança)
+    if (state.needsRecalc) {
+      const newData = setupStableCanvas(canvas);
+      if (newData) {
+        // Atualizar dimensões
+        state.cssW = newData.cssW;
+        state.cssH = newData.cssH;
+        state.dpr = newData.dpr;
+        ctx = newData.ctx;
+
+        // Recalcular elementos do jogo apenas uma vez
+        state.waypoints = generateStableWaypoints(state.cssW, state.cssH);
+        state.pathPoints = buildSmoothPath(
+          state.waypoints,
+          PATH_SAMPLE_PER_SEG
+        );
+        state.pathObj = buildPathDistances(state.pathPoints);
+
+        const baseSize = Math.min(state.cssW, state.cssH) * 0.12;
+        state.base.centerX = state.waypoints[0].x;
+        state.base.centerY = state.waypoints[0].y;
+        state.base.width = baseSize;
+        state.base.height = baseSize;
+
+        state.decorations = generateDecorations();
+        state.needsRecalc = false; // Marcar como concluído
+      }
+    }
+
     waveManager.update(dt, state);
 
-    // Processar inimigos
     for (const en of state.enemies) {
       const res = en.update(dt);
       if (res === "reached_base") {
         state.lives -= 1;
-        // Notificar WaveManager sobre inimigo que chegou na base
         waveManager.onEnemyDefeated(en);
       }
     }
 
-    // Processar torres
     for (const t of state.towers) t.update(dt, state);
 
-    // Filtrar inimigos mortos e notificar WaveManager
-    const before = state.enemies.length;
     const killedEnemies = state.enemies.filter((e) => e.dead);
     state.enemies = state.enemies.filter((e) => !e.dead);
-    const killed = before - state.enemies.length;
 
-    // Notificar WaveManager sobre inimigos derrotados
-    if (killed > 0) {
+    if (killedEnemies.length > 0) {
       killedEnemies.forEach((enemy) => {
         waveManager.onEnemyDefeated(enemy);
       });
     }
 
-    // HUD updates básicos (os eventos do WaveManager cuidam do resto)
+    // Atualizar HUD
     const goldEl = document.getElementById("gold");
     const livesEl = document.getElementById("lives");
     if (goldEl) goldEl.textContent = `Ouro: ${state.gold}`;
@@ -422,7 +500,6 @@ export async function initEngine(canvas) {
     if (state.lives <= 0) {
       state.running = false;
       console.info("Game Over");
-      // Disparar evento de game over
       waveManager.dispatchEvent("game:over", {
         reason: "no_lives",
         finalScore: waveManager.calculateScore(state),
@@ -431,10 +508,10 @@ export async function initEngine(canvas) {
   }
 
   function render(ctx) {
-    // background
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    // Limpar e renderizar usando dimensões estáveis
+    ctx.clearRect(0, 0, state.cssW, state.cssH);
     ctx.fillStyle = GAME_CONFIG.visual.backgroundColor || "#0b1320";
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.fillRect(0, 0, state.cssW, state.cssH);
 
     drawGrid(ctx);
     renderDecorations(ctx);
@@ -445,60 +522,103 @@ export async function initEngine(canvas) {
     for (const e of state.enemies) e.draw(ctx);
 
     if (!state.running) {
-      ctx.fillStyle = "rgba(0,0,0,0.45)";
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      ctx.save();
+      ctx.fillStyle = "rgba(0,0,0,0.5)";
+      ctx.fillRect(0, 0, state.cssW, state.cssH);
+
       ctx.fillStyle = "#fff";
-      ctx.font = "24px Inter, Arial";
-      ctx.fillText("Pausado / Game Over", 20, 40);
+      ctx.font = `${
+        Math.min(state.cssW, state.cssH) / 25
+      }px Inter, Arial, sans-serif`;
+      ctx.textAlign = "center";
+      ctx.fillText("PAUSADO / GAME OVER", state.cssW / 2, state.cssH / 2);
+      ctx.restore();
     }
   }
 
-  // canvas click to place tower (UI forwards selection to engine)
+  // Cliques estáveis
   canvas.addEventListener("click", (ev) => {
+    ev.preventDefault();
     const rect = canvas.getBoundingClientRect();
-    const x = (ev.clientX - rect.left) * (canvas.width / rect.width);
-    const y = (ev.clientY - rect.top) * (canvas.height / rect.height);
-    if (state.selectedTowerType) {
-      const res = GameAPI.placeTowerAt(x, y, state.selectedTowerType);
+    const xCss = ev.clientX - rect.left;
+    const yCss = ev.clientY - rect.top;
+
+    if (
+      state.selectedTowerType &&
+      xCss >= 0 &&
+      yCss >= 0 &&
+      xCss <= state.cssW &&
+      yCss <= state.cssH
+    ) {
+      const res = GameAPI.placeTowerAt(xCss, yCss, state.selectedTowerType);
       if (!res.ok) {
-        console.warn("não foi possível colocar torre:", res.reason);
+        console.warn("Não foi possível colocar torre:", res.reason);
         flashMessage(res.reason);
       }
     }
   });
 
-  function flashMessage(msg, ms = 1100) {
+  function flashMessage(msg, ms = 1500) {
     let el = document.getElementById("engine-msg");
     if (!el) {
       el = document.createElement("div");
       el.id = "engine-msg";
-      el.style.position = "fixed";
-      el.style.right = "20px";
-      el.style.top = "20px";
-      el.style.padding = "10px 14px";
-      el.style.background = "rgba(17,24,39,0.9)";
-      el.style.color = "#fff";
-      el.style.borderRadius = "8px";
-      el.style.zIndex = 9999;
+      Object.assign(el.style, {
+        position: "fixed",
+        right: "20px",
+        top: "100px",
+        padding: "12px 16px",
+        background: "rgba(17,24,39,0.95)",
+        color: "#fff",
+        borderRadius: "8px",
+        zIndex: "9999",
+        fontSize: "14px",
+        fontFamily: "Inter, Arial, sans-serif",
+        boxShadow: "0 4px 12px rgba(0,0,0,0.3)",
+        transition: "opacity 0.3s ease",
+      });
       document.body.appendChild(el);
     }
+
     el.textContent = msg;
     el.style.opacity = "1";
-    clearTimeout(el._t);
-    el._t = setTimeout(() => {
+    clearTimeout(el._timeout);
+    el._timeout = setTimeout(() => {
       el.style.opacity = "0";
     }, ms);
   }
 
-  function loop(now) {
-    const dt = (now - last) / 1000;
-    last = now;
-    update(dt);
-    render(ctx);
-    requestAnimationFrame(loop);
+  // Sistema de redimensionamento controlado - sem loops
+  let resizeTimeout;
+  function handleResize() {
+    clearTimeout(resizeTimeout);
+    resizeTimeout = setTimeout(() => {
+      // Apenas marcar para recalculação no próximo frame
+      state.needsRecalc = true;
+    }, 150); // Delay maior para estabilizar
   }
 
-  requestAnimationFrame(loop);
+  // Listener de resize mais seguro
+  window.addEventListener("resize", handleResize);
+
+  // Cleanup
+  window.addEventListener("beforeunload", () => {
+    window.removeEventListener("resize", handleResize);
+  });
+
+  // Game loop principal
+  function gameLoop(now) {
+    const dt = Math.min((now - last) / 1000, 1 / 30);
+    last = now;
+
+    update(dt);
+    render(ctx);
+
+    requestAnimationFrame(gameLoop);
+  }
+
+  // Iniciar o loop
+  requestAnimationFrame(gameLoop);
 
   return GameAPI;
 }
