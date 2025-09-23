@@ -157,11 +157,9 @@ a {
   font-weight: 600;
 }
 
-/* Tabs Navigation - Layout em 2 colunas */
 /* Tabs Navigation - Layout adaptável (definitivo) */
 .shop-tabs {
   display: grid;
-  grid-template-columns: 1fr 1fr;
   grid-template-columns: repeat(auto-fit, minmax(90px, 1fr));
   gap: 8px;
   margin-bottom: 16px;
@@ -229,7 +227,6 @@ a {
 /* Shop items - layout adaptável (definitivo) */
 .shop-items {
   display: grid;
-  grid-template-columns: 1fr 1fr;
   grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
   gap: 8px;
 }
@@ -342,19 +339,16 @@ a {
   padding: 6px;
   min-height: 0;
   overflow: hidden;
-  background: #000; /* garante continuidade quando canvas tem gap */
   background: var(--panel);
   border-radius: 6px;
 }
 
-/* Canvas responsivo: preenche o container visualmente */
 /* antes: .canvas-wrap > canvas { object-fit: contain; ... } */
 /* substitua por: */
 .canvas-wrap > canvas {
   width: 100%;
   height: 100%;
   display: block;
-  object-fit: contain;
   /* remover object-fit evita letterbox / barras pretas */
   /* object-fit: contain;  REMOVER */
   background: transparent;
@@ -363,8 +357,6 @@ a {
 /* novo comportamento padrão para canvas */
 canvas {
   display: block;
-  max-width: 100%;
-  height: auto;
   width: 100%;
   height: 100%;
   max-width: none;
@@ -540,14 +532,6 @@ button:focus,
   }
 }
 
-.shop-items {
-  grid-template-columns: repeat(3, 1fr);
-}
-
-.shop-tabs {
-  grid-template-columns: repeat(3, 1fr);
-}
-
 @media (max-width: 600px) {
   .hero-title {
     font-size: 28px;
@@ -557,10 +541,6 @@ button:focus,
     max-width: 90%;
     margin: 2rem auto;
     padding: 2rem;
-  }
-
-  .shop-tabs {
-    grid-template-columns: 1fr 1fr;
   }
 
   .game-topbar {
