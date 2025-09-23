@@ -126,7 +126,7 @@ export const GAME_CONFIG = {
       color: "#06b6d4",
       name: "Torre Antiaérea",
       description: "Ataca apenas voadores; essencial contra waves aéreas.",
-      category: "specialized",
+      category: "utility",
       airOnly: true,
       bonusDamageFlying: 4,
     },

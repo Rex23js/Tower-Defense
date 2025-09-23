@@ -1,23 +1,22 @@
 // js/ui.js
-import { GameAPI as _gameAPI } from "./engine.js"; // para tipagem; será undefined até engine inicializar
+import { GameAPI as _gameAPI } from "./engine.js";
 import { GAME_CONFIG } from "./game-config.js";
 
 let gameAPI = null;
 let waveManager = null;
 
 // Categorias das torres geradas dinamicamente a partir do GAME_CONFIG.towerTypes
-// Agrupamento mais compacto: reduz o número de abas combinando categorias semelhantes
 const TOWER_CATEGORIES = (() => {
   const types =
     GAME_CONFIG && GAME_CONFIG.towerTypes ? GAME_CONFIG.towerTypes : {};
   const iconMap = {
     basic: "🏰",
-    offense: "⚔️",
     support: "🛡️",
-    antiair: "🛩️",
-    magic: "🔮",
-    special: "✨",
-    other: "🔧",
+    offense: "⚔️",
+    antiair: "🚁",
+    magic: "✨",
+    special: "⭐",
+    other: "🎯",
   };
 
   const categories = {};
@@ -101,7 +100,6 @@ export function bindUI() {
     if (!shop) return;
 
     shop.innerHTML = `
-      
       <div class="shop-header">
       <h3>Loja de Torres</h3>
       <div class="shop-tabs">
@@ -455,4 +453,5 @@ export function bindUI() {
   // Initial setup
   renderShop();
   setupGameControls();
+  // setupSettingsMenu foi removido pois agora está no main.js
 }
