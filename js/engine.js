@@ -33,9 +33,11 @@ function catmullRom(p0, p1, p2, p3, t) {
   return { x, y };
 }
 
+// Substitua a função buildSmoothPath existente por esta
 function buildSmoothPath(waypoints, segmentsPerCurve = PATH_SAMPLE_PER_SEG) {
   if (!waypoints || waypoints.length < 2) return [...(waypoints || [])];
   const pts = [];
+  // cria array 'extended' com repetição das pontas para suavizar curva
   const extended = [
     waypoints[0],
     ...waypoints,
