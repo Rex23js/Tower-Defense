@@ -159,14 +159,14 @@ a {
   margin: 0;
   padding: 16px;
   display: grid;
-  grid-template-columns: minmax(200px, clamp(220px, 18vw, 320px)) 1fr;
+  grid-template-columns: minmax(240px, clamp(240px, 20vw, 320px)) 1fr;
   gap: 18px;
   box-sizing: border-box;
   align-items: stretch;
   background: transparent;
 }
 
-/* Shop com tamanho otimizado */
+/* Shop com layout melhorado para coluna única */
 .shop {
   background: var(--panel);
   border-radius: 8px;
@@ -174,79 +174,88 @@ a {
   display: flex;
   flex-direction: column;
   min-height: 0;
-  max-width: 420px;
+  max-width: 320px;
   padding: 0;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
 }
 
 /* Cabeçalho da loja (titulo + abas) */
 .shop-header {
-  padding: 14px;
+  padding: 16px;
   flex-shrink: 0;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
 }
 
 .shop-header h3 {
   margin: 0 0 16px 0;
-  font-size: 1.1rem;
-  font-weight: 600;
+  font-size: 1.2rem;
+  font-weight: 700;
+  text-align: center;
+  color: var(--accent);
 }
 
-/* Tabs Navigation - Layout adaptável */
+/* Tabs Navigation - Layout mais compacto */
 .shop-tabs {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(90px, 1fr));
-  gap: 8px;
-  margin-bottom: 16px;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 6px;
+  margin-bottom: 0;
 }
 
 .tab-button {
-  padding: 10px 8px;
+  padding: 8px 6px;
   border: none;
-  background: #f3f4f6;
+  background: #f9fafb;
   border-radius: 6px;
   cursor: pointer;
-  font-size: 11px;
-  font-weight: 500;
+  font-size: 10px;
+  font-weight: 600;
   color: var(--muted);
   transition: all 0.2s ease;
   text-transform: uppercase;
   letter-spacing: 0.3px;
   text-align: center;
+  line-height: 1.2;
+  border: 1px solid rgba(0, 0, 0, 0.04);
 }
 
 .tab-button:hover {
   background-color: var(--tab-hover);
   color: var(--accent);
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
 }
 
 .tab-button.active {
   background: var(--accent);
   color: white;
+  box-shadow: 0 2px 6px rgba(59, 130, 246, 0.3);
 }
 
-/* Tab Content */
+/* Tab Content - Layout otimizado para coluna única */
 .tab-content {
-  padding: 0 16px 16px;
+  padding: 12px;
   flex: 1;
   overflow-y: auto;
   min-height: 0;
 }
 
 .tab-content::-webkit-scrollbar {
-  width: 4px;
+  width: 6px;
 }
 
 .tab-content::-webkit-scrollbar-track {
-  background: rgba(0, 0, 0, 0.05);
-  border-radius: 2px;
+  background: rgba(0, 0, 0, 0.03);
+  border-radius: 3px;
 }
 
 .tab-content::-webkit-scrollbar-thumb {
-  background: rgba(0, 0, 0, 0.2);
-  border-radius: 2px;
+  background: rgba(0, 0, 0, 0.15);
+  border-radius: 3px;
 }
 
 .tab-content::-webkit-scrollbar-thumb:hover {
-  background: rgba(0, 0, 0, 0.3);
+  background: rgba(0, 0, 0, 0.25);
 }
 
 .tab-pane {
@@ -257,68 +266,85 @@ a {
   display: block;
 }
 
-/* Shop items - layout adaptável */
+/* Shop items - Layout em coluna única melhorado */
 .shop-items {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  display: flex;
+  flex-direction: column;
   gap: 8px;
 }
 
 .shop-item {
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
   align-items: center;
-  padding: 8px;
-  border-radius: 6px;
+  padding: 10px;
+  border-radius: 8px;
   background: #fff;
-  border: 1px solid rgba(0, 0, 0, 0.04);
+  border: 1px solid rgba(0, 0, 0, 0.06);
   cursor: pointer;
   transition: all 0.2s ease;
-  text-align: center;
+  gap: 10px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
 }
 
 .shop-item:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-}
-
-.shop-item .thumb {
-  width: 40px;
-  height: 40px;
-  background: #efefef;
-  border-radius: 4px;
-  border: 1px solid rgba(0, 0, 0, 0.04);
-  margin-bottom: 6px;
-}
-
-.shop-item .meta {
-  font-size: 11px;
-  line-height: 1.3;
-}
-
-.shop-item .meta strong {
-  display: block;
-  font-size: 12px;
-  margin-bottom: 2px;
-  font-weight: 600;
-}
-
-.shop-item .description {
-  color: var(--muted);
-  font-size: 10px;
-  margin: 2px 0;
-}
-
-.shop-item .price {
-  font-weight: 600;
-  color: var(--accent);
-  font-size: 11px;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  border-color: rgba(0, 0, 0, 0.08);
 }
 
 .shop-item.selected {
   outline: 2px solid var(--tab-active);
   outline-offset: 1px;
-  background-color: rgba(59, 130, 246, 0.05);
+  background-color: rgba(59, 130, 246, 0.08);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.2);
+}
+
+.shop-item .thumb {
+  width: 48px;
+  height: 48px;
+  background: #efefef;
+  border-radius: 8px;
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  flex-shrink: 0;
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+.shop-item .meta {
+  flex: 1;
+  min-width: 0;
+}
+
+.shop-item .meta strong {
+  display: block;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--accent);
+  margin-bottom: 3px;
+  line-height: 1.3;
+}
+
+.shop-item .description {
+  color: var(--muted);
+  font-size: 11px;
+  line-height: 1.3;
+  margin-bottom: 4px;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.shop-item .price {
+  font-weight: 700;
+  color: #059669;
+  font-size: 12px;
+  background: rgba(5, 150, 105, 0.1);
+  padding: 2px 6px;
+  border-radius: 4px;
+  display: inline-block;
+  margin-top: 2px;
 }
 
 /* Game area - Ocupa o espaço restante */
@@ -687,68 +713,143 @@ button:focus,
   transform: translateY(-1px);
 }
 
-/* Ajustes menores: tornar a loja menor em telas maiores */
-@media (min-width: 1500px) {
+/* Responsividade melhorada */
+@media (max-width: 1200px) {
   .game-wrap {
     grid-template-columns: 280px 1fr;
   }
+
+  .shop {
+    max-width: 280px;
+  }
 }
 
-/* Em telas pequenas: empilha loja encima do jogo */
 @media (max-width: 900px) {
   .game-wrap {
-    display: block;
+    display: flex;
+    flex-direction: column;
     height: auto;
     padding: 12px;
+    gap: 12px;
   }
+
   .shop {
-    margin-bottom: 12px;
-    max-height: 420px;
-    overflow: auto;
+    max-width: 100%;
+    max-height: 40vh;
+    order: 1;
   }
 
   .game-area {
-    border-radius: 6px;
-    padding: 10px;
+    order: 2;
+    min-height: 50vh;
   }
+
   .canvas-wrap > canvas {
-    height: 480px;
+    width: 100%;
+    height: auto;
+    aspect-ratio: 16 / 10;
+    max-height: 50vh;
+  }
+
+  .shop-tabs {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 4px;
+  }
+
+  .tab-button {
+    font-size: 9px;
+    padding: 6px 4px;
   }
 }
 
-.shop-items {
-  grid-template-columns: repeat(3, 1fr);
-}
-
-.shop-tabs {
-  grid-template-columns: repeat(3, 1fr);
-}
-
-/* Mobile responsiveness */
 @media (max-width: 600px) {
   .hero-title {
     font-size: 28px;
   }
 
   .hero {
-    max-width: 90%;
+    max-width: 95%;
     margin: 2rem auto;
     padding: 2rem;
   }
 
+  .shop {
+    max-height: 35vh;
+  }
+
+  .shop-header {
+    padding: 12px;
+  }
+
+  .shop-header h3 {
+    font-size: 1.1rem;
+    margin-bottom: 12px;
+  }
+
+  .tab-content {
+    padding: 8px;
+  }
+
+  .shop-item {
+    padding: 8px;
+    gap: 8px;
+  }
+
+  .shop-item .thumb {
+    width: 40px;
+    height: 40px;
+  }
+
+  .shop-item .meta strong {
+    font-size: 12px;
+  }
+
+  .shop-item .description {
+    font-size: 10px;
+  }
+
+  .shop-item .price {
+    font-size: 11px;
+  }
+
   .shop-tabs {
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 4px;
+  }
+
+  .tab-button {
+    font-size: 8px;
+    padding: 6px 3px;
   }
 
   .game-topbar {
     flex-direction: column;
-    gap: 12px;
+    gap: 8px;
   }
 
   .hud-inline {
     display: flex;
     flex-wrap: wrap;
     gap: 8px;
+    justify-content: center;
+  }
+
+  .hud-inline span {
+    margin-right: 0;
+    font-size: 12px;
+  }
+
+  .controls-inline {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    justify-content: center;
+  }
+
+  .controls-inline button {
+    margin-left: 0;
+    font-size: 11px;
+    padding: 6px 10px;
   }
 
   .settings-button {
@@ -758,7 +859,7 @@ button:focus,
   }
 
   .settings-content {
-    padding: 30px 25px;
+    padding: 30px 20px;
     min-width: 280px;
     margin: 20px;
   }
@@ -766,11 +867,6 @@ button:focus,
   .settings-title {
     font-size: 1.5rem;
     margin-bottom: 24px;
-  }
-
-  .settings-nav .nav-link {
-    font-size: 1rem;
-    padding: 12px 20px;
   }
 }
 
