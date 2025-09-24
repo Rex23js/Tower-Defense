@@ -1,28 +1,3 @@
-<div align="center">
-
-  <img src="[URL_DA_IMAGEM_DE_CABEÇALHO_AQUI]" alt="Banner do Projeto Tower Defense" width="800"/>
-
-# Tower Defense - Projeto Acadêmico 🚀
-
-  <p>
-    <strong>Um jogo de Tower Defense construído com HTML, CSS e JavaScript puro, focado em boas práticas de desenvolvimento, testes e integração com API.</strong>
-  </p>
-
-  <p>
-    <img src="https://img.shields.io/badge/status-concluído-green" alt="Status do Projeto">
-    <img src="https://img.shields.io/github/languages/top/seu-usuario/seu-repositorio?color=blue" alt="Linguagem Principal">
-    <img src="https://img.shields.io/github/last-commit/seu-usuario/seu-repositorio" alt="Último Commit">
-    <img src="https://img.shields.io/badge/licen%C3%A7a-MIT-informational" alt="Licença MIT">
-  </p>
-</div>
-
-<div align="center">
-
-  <img src="[URL_DO_GIF_DO_GAMEPLAY_AQUI]" alt="Gameplay do Tower Defense" width="700">
-</div>
-
----
-
 ## 📖 Sumário
 
 - [🎯 Sobre o Projeto](#-sobre-o-projeto)
