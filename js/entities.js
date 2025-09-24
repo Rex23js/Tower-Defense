@@ -151,53 +151,63 @@ export class Enemy {
  * Classe para torres
  */
 export class Tower {
-  constructor(x, y, type = "basic") {
+  constructor(x, y, type) {
     this.x = x;
     this.y = y;
     this.type = type;
 
-    // Aplicar configurações do tipo
-    const config = GAME_CONFIG.towerTypes[type] || GAME_CONFIG.towerTypes.basic;
-    this.range = config.range;
-    this.fireRate = config.fireRate;
-    this.damage = config.damage;
-    this.color = config.color;
-    this.cost = config.cost;
+    const cfg = GAME_CONFIG.towerTypes[type] || {};
+    this.cfg = cfg;
 
-    this.cooldown = 0;
-    this.size = 20;
+    // Normalizar valores vindos de config (usar defaults seguros)
+    this.size = typeof cfg.size === "number" ? cfg.size : 20; // diâmetro (px) - valor padrão menor
+    this.range = typeof cfg.range === "number" ? cfg.range : 80; // raio (px)
+    this.damage = typeof cfg.damage === "number" ? cfg.damage : cfg.damage ?? 4;
+    this.fireRate =
+      typeof cfg.fireRate === "number" ? cfg.fireRate : cfg.fireRate ?? 1; // tiros por segundo
+    this.color = cfg.color || "#33c";
+    this.cost = cfg.cost || 0;
+
+    // Estado dinâmico
+    this.cooldown = 0; // tempo até próximo tiro (s)
     this.target = null;
     this.totalDamageDealt = 0;
     this.enemiesKilled = 0;
-    // --- Adicionar no constructor da Tower (entities.js) ---
+
+    // Retarget: evitar recalcular alvo toda frame
     this.retargetTimer = 0;
-    this.retargetInterval = 0.25; // segundos entre buscas de alvo — ajuste se quiser (0.1..0.5)
+    this.retargetInterval =
+      typeof cfg.retargetInterval === "number" ? cfg.retargetInterval : 0.25;
   }
 
-  /**
-   * Atualiza o estado da torre
-   * @param {number} dt - Delta time
-   * @param {Object} gameState - Estado do jogo
-   */
   update(dt, gameState) {
-    // --- Substituir Tower.update(dt, gameState) ---
-    this.cooldown -= dt;
-    this.retargetTimer -= dt;
+    // Proteção contra dt absurdo
+    if (dt <= 0) return;
 
-    // Só refaz a busca de alvo periodicamente (ou se não tiver alvo)
+    // Atualizar timers
+    this.cooldown = (this.cooldown || 0) - dt;
+    this.retargetTimer = (this.retargetTimer || 0) - dt;
+
+    // Rebuscar alvo periodicamente
     if (!this.target || this.retargetTimer <= 0) {
       this.retargetTimer = this.retargetInterval;
       this.target = this.findTarget(gameState.enemies || []);
-      // se o alvo morreu entre updates, findTarget devolve outro ou null
     }
 
-    // Atira apenas quando o cooldown zerar e houver alvo válido
+    // Só atira quando cooldown <= 0 e existir alvo válido
     if (this.cooldown <= 0 && this.target) {
       this.fire(this.target, gameState);
-      this.cooldown = 1 / this.fireRate;
+      // segurança: evitar divisão por zero / undefined
+      const fr = this.fireRate && this.fireRate > 0 ? this.fireRate : 1;
+      this.cooldown = 1 / fr;
     }
   }
 
+  /**
+   * Encontra o melhor alvo dentro do alcance
+   * @param {Array} enemies - Array de inimigos
+   * @returns {Enemy|null} - Melhor alvo ou null
+   */
   findTarget(enemies) {
     let bestTarget = null;
     let bestScore = -Infinity;
@@ -217,11 +227,16 @@ export class Tower {
       }
     }
 
-    this.target = bestTarget;
     return bestTarget;
   }
-  // --- Nova calculateTargetScore(enemy, distance, pathTotal) ---
-  // Normaliza valores e usa pathTotal real para evitar números mágicos.
+
+  /**
+   * Calcula pontuação do alvo para priorização
+   * @param {Enemy} enemy - Inimigo
+   * @param {number} distance - Distância até o inimigo
+   * @param {number} pathTotal - Comprimento total do caminho
+   * @returns {number} - Pontuação do alvo
+   */
   calculateTargetScore(enemy, distance, pathTotal = 1000) {
     // quanto mais avançado no caminho, maior o progress (0..pathTotal)
     const progressTowardsBase = Math.max(
@@ -245,16 +260,22 @@ export class Tower {
    * @param {Object} gameState - Estado do jogo
    */
   fire(target, gameState) {
-    const killed = target.takeDamage(this.damage);
-    this.totalDamageDealt += this.damage;
+    if (!target || target.dead) return;
+
+    const dmg = typeof this.damage === "number" ? this.damage : 1;
+    const killed = target.takeDamage(dmg);
+
+    // contabiliza
+    this.totalDamageDealt += dmg;
 
     if (killed) {
       this.enemiesKilled++;
-      // Dar recompensa de ouro
-      gameState.gold += target.goldValue;
+      if (gameState && typeof gameState.gold === "number") {
+        gameState.gold += target.goldValue || 0;
+      }
     }
 
-    // Criar efeito visual de tiro (opcional)
+    // efeito visual opcional
     this.createFireEffect(target);
   }
 

@@ -561,17 +561,17 @@ export async function initEngine(canvas) {
     const mx = state.mouse.x;
     const my = state.mouse.y;
 
-    // Usar distanceToPath para validação precisa
+    // Validações
     const dToPath = distanceToPath({ x: mx, y: my }, state.pathPoints);
     const isInvalidPath = dToPath < PATH_RADIUS_BLOCK;
     const isInvalidTower = isOverlappingAnotherTower(
       mx,
       my,
       config.size,
-      state.towers
+      state.towers,
+      { ignoreRecentMs: 200 } // mantém sua proteção contra a torre recém-criada
     );
 
-    // Verificar colisão com base
     const baseLeft = state.base.centerX - state.base.width / 2;
     const baseRight = state.base.centerX + state.base.width / 2;
     const baseTop = state.base.centerY - state.base.height / 2;
@@ -585,21 +585,32 @@ export async function initEngine(canvas) {
       ? "rgba(0, 255, 0, 0.3)"
       : "rgba(255, 0, 0, 0.3)";
 
-    // Desenhar o círculo de alcance
-    ctx.beginPath();
-    ctx.arc(mx, my, config.range, 0, Math.PI * 2);
-    ctx.fillStyle = color;
-    ctx.fill();
+    // ===== Ajuste aqui para encolher o visual =====
+    // Valores de exemplo: 0.25 deixa o corpo bem pequeno; 0.5 é médio; 1.0 = tamanho "real".
+    const GHOST_RANGE_SCALE = GAME_CONFIG.visual?.ghostRangeScale ?? 0.6; // alcance visual
+    const GHOST_BODY_SCALE = GAME_CONFIG.visual?.ghostBodyScale ?? 0.25; // corpo visual (muito menor)
 
-    // Desenhar o corpo da torre fantasma
-    ctx.beginPath();
-    ctx.arc(mx, my, config.size / 2, 0, Math.PI * 2);
-    ctx.fillStyle = config.color;
-    ctx.globalAlpha = 0.7;
-    ctx.fill();
-    ctx.strokeStyle = "#fff";
-    ctx.stroke();
+    // config.range é raio -> lado do quadrado visual = 2 * raio
+    const rangeSide = config.range * 1 * GHOST_RANGE_SCALE;
+    const ghostSize = config.size * GHOST_BODY_SCALE; // config.size = diâmetro esperado
+    const halfGhost = ghostSize / 2;
+
+    // Desenha área de alcance (quadrado)
+    ctx.save();
     ctx.globalAlpha = 1.0;
+    ctx.fillStyle = color;
+    ctx.fillRect(mx - rangeSide / 2, my - rangeSide / 2, rangeSide, rangeSide);
+    ctx.restore();
+
+    // Desenha corpo da torre (quadrado pequeno)
+    ctx.save();
+    ctx.globalAlpha = 0.7;
+    ctx.fillStyle = config.color || "#999";
+    ctx.fillRect(mx - halfGhost, my - halfGhost, ghostSize, ghostSize);
+    ctx.lineWidth = Math.max(1, ghostSize * 0.06);
+    ctx.strokeStyle = "#fff";
+    ctx.strokeRect(mx - halfGhost, my - halfGhost, ghostSize, ghostSize);
+    ctx.restore();
   }
 
   // ==========================================================
