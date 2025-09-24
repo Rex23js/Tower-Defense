@@ -16,6 +16,7 @@
 html,
 body {
   height: 100%;
+  overflow: hidden;
   margin: 0;
   font-family: Inter, Arial, sans-serif;
   background: var(--page-bg);
@@ -334,6 +335,49 @@ a {
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
+}
+/* Novo contêiner para organizar as pills de estatísticas */
+.shop-item .stats-container {
+  display: grid; /* Mudar para Grid */
+  grid-template-columns: 1fr 1fr; /* Duas colunas de tamanho igual */
+  gap: 6px; /* Aumentar um pouco o espaçamento entre os itens */
+  margin-bottom: 8px; /* Espaço abaixo do conjunto de stats */
+}
+
+/* Ajuste sutil para o estilo da pill para um visual mais "cheio" */
+.shop-item .stat-item {
+  color: #6366f1;
+  font-size: 11px;
+  font-weight: 500;
+  line-height: 1.2;
+  background: rgba(99, 102, 241, 0.1);
+  padding: 5px 8px; /* Ajustar padding vertical */
+  border-radius: 4px; /* Menos arredondado para combinar com as bordas do item */
+  border: 1px solid rgba(99, 102, 241, 0.2);
+  white-space: nowrap;
+  text-overflow: ellipsis; /* Adicionado para evitar que o texto das pills vaze */
+  overflow: hidden; /* Adicionado para evitar que o texto das pills vaze */
+}
+
+/* Ajuste para a descrição, limitando a 2 ou 3 linhas */
+.shop-item .description {
+  color: var(--muted);
+  font-size: 11px;
+  line-height: 1.4; /* Aumentar um pouco o line-height para legibilidade */
+  margin-bottom: 8px; /* Aumentar margem para separar das pills */
+  display: -webkit-box;
+  -webkit-line-clamp: 3; /* Limitar a 3 linhas (ou 2 se preferir algo mais compacto) */
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  text-overflow: ellipsis; /* Garante que o texto seja cortado com '...' */
+}
+
+/* Manter a regra específica para o preço, ela já sobrepõe as cores */
+.shop-item .stat-item--price {
+  color: #059669;
+  background-color: rgba(5, 150, 105, 0.1);
+  border-color: rgba(5, 150, 105, 0.2);
+  font-weight: 700;
 }
 
 .shop-item .price {
@@ -806,6 +850,11 @@ button:focus,
 
   .shop-item .description {
     font-size: 10px;
+  }
+
+  .shop-item .stats {
+    font-size: 9px;
+    padding: 2px 4px;
   }
 
   .shop-item .price {

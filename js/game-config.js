@@ -117,33 +117,6 @@ export const GAME_CONFIG = {
       description: "Dano alto e longo alcance, ótimo contra tanques.",
       category: "basic",
     },
-
-    antiair: {
-      cost: 85,
-      range: 180,
-      fireRate: 1.8,
-      damage: 5,
-      color: "#06b6d4",
-      name: "Torre Antiaérea",
-      description: "Ataca apenas voadores; essencial contra waves aéreas.",
-      category: "utility",
-      airOnly: true,
-      bonusDamageFlying: 4,
-    },
-
-    support: {
-      cost: 80,
-      range: 140,
-      fireRate: 0,
-      damage: 0,
-      color: "#16a34a",
-      name: "Torre de Suporte",
-      description: "Aumenta dano/alcance de torres próximas.",
-      category: "utility",
-      supportRadius: 100,
-      damageBonus: 0.2,
-      rangeBonus: 0.1,
-    },
   },
 
   waveDefinitions: [

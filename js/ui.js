@@ -123,16 +123,36 @@ export function bindUI() {
             .map((towerType) => {
               const config = GAME_CONFIG.towerTypes[towerType];
               if (!config) return "";
+
+              const stats = [];
+
+              // Usamos ícones para melhorar a identificação e preencher mais o espaço
+              if (config.damage > 0) stats.push(`Dano: ${config.damage}`); // Mantido
+              if (config.fireRate > 0)
+                stats.push(`Cadência: ${config.fireRate}/s`); // Novo ícone
+              if (config.range > 0) stats.push(`Alcance: ${config.range}`); // Novo ícone
+
+              // Mapeia cada string de estatística para um elemento HTML <span>
+              // e depois junta tudo em uma única string de HTML.
+              const statsHTML = stats
+                .map((stat) => `<span class="stat-item">${stat}</span>`)
+                .join("");
+
               return `
-                  <div class="shop-item" data-tower="${towerType}" tabindex="0" role="button">
-                    <div class="thumb" style="background-color: ${config.color}"></div>
-                    <div class="meta">
-                      <strong>${config.name}</strong>
-                      <div class="description">${config.description}</div>
-                      <div class="price">💰 ${config.cost}</div>
-                    </div>
-                  </div>
-                `;
+        <div class="shop-item" data-tower="${towerType}" tabindex="0" role="button">
+            <div class="thumb" style="background-color: ${config.color}"></div>
+            <div class="meta">
+                <strong>${config.name}</strong>
+                <div class="description">${config.description}</div>
+                
+                <div class="stats-container">
+                    ${statsHTML}
+                    <span class="stat-item stat-item--price">💰 ${config.cost}</span>
+                </div>
+                
+                </div>
+        </div>
+    `;
             })
             .join("")}
             </div>
