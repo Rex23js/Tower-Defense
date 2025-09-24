@@ -14,7 +14,17 @@ const DEFAULTS = {
 const PATH_SAMPLE_PER_SEG = GAME_CONFIG.pathSamplePerSeg;
 const PATH_RADIUS_BLOCK = GAME_CONFIG.pathRadiusBlock;
 
-// Catmull-Rom helpers (mantidos)
+// ==========================================================
+// FUNÇÕES UTILITÁRIAS
+// ==========================================================
+
+function distance(p1, p2) {
+  const dx = p1.x - p2.x;
+  const dy = p1.y - p2.y;
+  return Math.sqrt(dx * dx + dy * dy);
+}
+
+// Catmull-Rom helpers
 function catmullRom(p0, p1, p2, p3, t) {
   const t2 = t * t;
   const t3 = t2 * t;
@@ -33,7 +43,6 @@ function catmullRom(p0, p1, p2, p3, t) {
   return { x, y };
 }
 
-// Substitua a função buildSmoothPath existente por esta
 function buildSmoothPath(waypoints, segmentsPerCurve = PATH_SAMPLE_PER_SEG) {
   if (!waypoints || waypoints.length < 2) return [...(waypoints || [])];
   const pts = [];
@@ -89,13 +98,45 @@ function samplePointAtDistance(pathObj, distance) {
   return points[points.length - 1];
 }
 
-function distanceToPath(point, pathPoints) {
-  let best = Infinity;
-  for (const q of pathPoints) {
-    const d = Math.hypot(point.x - q.x, point.y - q.y);
-    if (d < best) best = d;
+// Função que calcula distância real aos segmentos do caminho
+function distanceToPath(pt, pathPoints) {
+  if (!pathPoints || pathPoints.length === 0) return Infinity;
+  let minD = Infinity;
+  for (let i = 0; i < pathPoints.length - 1; i++) {
+    const a = pathPoints[i];
+    const b = pathPoints[i + 1];
+    // projetar pt sobre o segmento AB
+    const vx = b.x - a.x;
+    const vy = b.y - a.y;
+    const wx = pt.x - a.x;
+    const wy = pt.y - a.y;
+    const vLen2 = vx * vx + vy * vy;
+    let t = vLen2 > 0 ? (vx * wx + vy * wy) / vLen2 : 0;
+    t = Math.max(0, Math.min(1, t));
+    const px = a.x + vx * t;
+    const py = a.y + vy * t;
+    const d = Math.hypot(pt.x - px, pt.y - py);
+    if (d < minD) minD = d;
   }
-  return best;
+  return minD;
+}
+
+function isOverlappingAnotherTower(x, y, newTowerSize, existingTowers) {
+  for (const tower of existingTowers) {
+    const requiredDist = (newTowerSize + tower.size) / 2;
+    if (distance({ x, y }, { x: tower.x, y: tower.y }) < requiredDist) {
+      return true;
+    }
+  }
+  return false;
+}
+
+function getMousePos(canvas, evt) {
+  const rect = canvas.getBoundingClientRect();
+  return {
+    x: evt.clientX - rect.left,
+    y: evt.clientY - rect.top,
+  };
 }
 
 // Sistema de canvas estável - sem loops de redimensionamento
@@ -139,7 +180,7 @@ function setupStableCanvas(canvas) {
   return updateCanvasSize();
 }
 
-// Gera waypoints estáveis e proporcionais
+// Gera waypoints estáveis e proporcionais (mantendo a pista em formato de labirinto)
 function generateStableWaypoints(cssW, cssH) {
   const margin = Math.min(cssW, cssH) * 0.08;
   const segmentW = (cssW - margin * 2) / 6;
@@ -161,7 +202,10 @@ function generateStableWaypoints(cssW, cssH) {
   ];
 }
 
-// ---- engine (init) ----
+// ==========================================================
+// INÍCIO DO ENGINE
+// ==========================================================
+
 export async function initEngine(canvas) {
   if (!canvas) return;
 
@@ -183,6 +227,7 @@ export async function initEngine(canvas) {
     waves: [],
     running: true,
     selectedTowerType: null,
+    mouse: { x: 0, y: 0, isValid: false },
     canvas,
     // Elementos estáticos que não mudam durante o jogo
     waypoints: initialWaypoints,
@@ -193,7 +238,7 @@ export async function initEngine(canvas) {
       centerY: initialWaypoints[0].y,
       width: Math.min(cssW, cssH) * 0.12,
       height: Math.min(cssW, cssH) * 0.12,
-      hp: GAME_CONFIG.base.hp,
+      hp: GAME_CONFIG.base?.hp || 100,
     },
     decorations: [],
     // Dimensões atuais
@@ -210,17 +255,17 @@ export async function initEngine(canvas) {
   // Gerar decorações uma vez
   function generateDecorations() {
     const decs = [];
-    const density = Math.floor((cssW * cssH) / 12000);
+    const density = Math.floor((state.cssW * state.cssH) / 12000);
     const tries = Math.max(30, Math.min(150, density));
 
     for (let i = 0; i < tries; i++) {
-      const margin = Math.min(cssW, cssH) * 0.05;
-      const px = margin + Math.random() * (cssW - margin * 2);
-      const py = margin + Math.random() * (cssH - margin * 2);
+      const margin = Math.min(state.cssW, state.cssH) * 0.05;
+      const px = margin + Math.random() * (state.cssW - margin * 2);
+      const py = margin + Math.random() * (state.cssH - margin * 2);
       const d = distanceToPath({ x: px, y: py }, state.pathPoints);
 
       if (d > PATH_RADIUS_BLOCK + 25) {
-        const r = 4 + Math.random() * Math.min(cssW, cssH) * 0.025;
+        const r = 4 + Math.random() * Math.min(state.cssW, state.cssH) * 0.025;
         decs.push({
           x: px,
           y: py,
@@ -236,7 +281,69 @@ export async function initEngine(canvas) {
 
   const waveManager = new WaveManager();
 
-  // Public API
+  // ==========================================================
+  // EVENT LISTENERS
+  // ==========================================================
+
+  function handleMouseMove(e) {
+    const pos = getMousePos(canvas, e);
+    state.mouse.x = pos.x;
+    state.mouse.y = pos.y;
+  }
+
+  function handleMouseLeave() {
+    state.selectedTowerType = null;
+  }
+
+  function handleClick(e) {
+    if (!state.selectedTowerType) return;
+
+    const { x: mx, y: my } = getMousePos(canvas, e);
+    const config = GAME_CONFIG.towerTypes[state.selectedTowerType];
+
+    if (state.gold < config.cost) {
+      flashMessage("Ouro insuficiente!");
+      return;
+    }
+
+    // Usar distanceToPath para verificação precisa
+    const dToPath = distanceToPath({ x: mx, y: my }, state.pathPoints);
+    const isInvalidPath = dToPath < PATH_RADIUS_BLOCK;
+    const isInvalidTower = isOverlappingAnotherTower(
+      mx,
+      my,
+      config.size,
+      state.towers
+    );
+
+    // Verificar colisão com base
+    const baseLeft = state.base.centerX - state.base.width / 2;
+    const baseRight = state.base.centerX + state.base.width / 2;
+    const baseTop = state.base.centerY - state.base.height / 2;
+    const baseBottom = state.base.centerY + state.base.height / 2;
+    const isInvalidBase =
+      mx >= baseLeft && mx <= baseRight && my >= baseTop && my <= baseBottom;
+
+    if (isInvalidPath || isInvalidTower || isInvalidBase) {
+      if (isInvalidPath) flashMessage("Muito próximo do caminho!");
+      else if (isInvalidTower) flashMessage("Muito próximo de outra torre!");
+      else if (isInvalidBase) flashMessage("Não pode construir sobre a base!");
+      return;
+    }
+
+    state.gold -= config.cost;
+    const tower = new Tower(mx, my, state.selectedTowerType);
+    state.towers.push(tower);
+  }
+
+  canvas.addEventListener("mousemove", handleMouseMove);
+  canvas.addEventListener("mouseleave", handleMouseLeave);
+  canvas.addEventListener("click", handleClick);
+
+  // ==========================================================
+  // API PÚBLICA
+  // ==========================================================
+
   GameAPI = {
     placeTowerAt: (x, y, type) => {
       const towerConfig = GAME_CONFIG.towerTypes[type];
@@ -254,10 +361,15 @@ export async function initEngine(canvas) {
         return { ok: false, reason: "não pode construir sobre a base" };
       }
 
-      // Verificar distância do caminho
+      // Usar distanceToPath para verificação precisa
       const dToPath = distanceToPath({ x, y }, state.pathPoints);
       if (dToPath < PATH_RADIUS_BLOCK)
         return { ok: false, reason: "não pode construir no caminho" };
+
+      // Verificar sobreposição com outras torres
+      if (isOverlappingAnotherTower(x, y, towerConfig.size, state.towers)) {
+        return { ok: false, reason: "muito próximo de outra torre" };
+      }
 
       state.gold -= towerConfig.cost;
       state.towers.push(new Tower(x, y, type));
@@ -283,7 +395,10 @@ export async function initEngine(canvas) {
     getWaveManager: () => waveManager,
   };
 
-  // Carregar waves
+  // ==========================================================
+  // INICIALIZAÇÃO DAS WAVES
+  // ==========================================================
+
   try {
     state.waves = await getWaves();
     waveManager.initialize(state.waves);
@@ -298,7 +413,10 @@ export async function initEngine(canvas) {
     gameState.enemies.push(e);
   };
 
-  // Funções de renderização (sem mudanças nas dimensões)
+  // ==========================================================
+  // FUNÇÕES DE RENDERIZAÇÃO
+  // ==========================================================
+
   function drawGrid(ctx) {
     const step = Math.max(
       16,
@@ -365,7 +483,7 @@ export async function initEngine(canvas) {
     }
 
     ctx.lineWidth = pathWidth;
-    ctx.strokeStyle = GAME_CONFIG.visual.pathColor || "#1a1a1a";
+    ctx.strokeStyle = GAME_CONFIG.visual?.pathColor || "#1a1a1a";
     ctx.lineCap = "round";
     ctx.lineJoin = "round";
     ctx.stroke();
@@ -436,7 +554,58 @@ export async function initEngine(canvas) {
     ctx.restore();
   }
 
-  // Update loop (sem alterações de layout)
+  function renderTowerGhost(ctx) {
+    if (!state.selectedTowerType) return;
+
+    const config = GAME_CONFIG.towerTypes[state.selectedTowerType];
+    const mx = state.mouse.x;
+    const my = state.mouse.y;
+
+    // Usar distanceToPath para validação precisa
+    const dToPath = distanceToPath({ x: mx, y: my }, state.pathPoints);
+    const isInvalidPath = dToPath < PATH_RADIUS_BLOCK;
+    const isInvalidTower = isOverlappingAnotherTower(
+      mx,
+      my,
+      config.size,
+      state.towers
+    );
+
+    // Verificar colisão com base
+    const baseLeft = state.base.centerX - state.base.width / 2;
+    const baseRight = state.base.centerX + state.base.width / 2;
+    const baseTop = state.base.centerY - state.base.height / 2;
+    const baseBottom = state.base.centerY + state.base.height / 2;
+    const isInvalidBase =
+      mx >= baseLeft && mx <= baseRight && my >= baseTop && my <= baseBottom;
+
+    state.mouse.isValid = !isInvalidPath && !isInvalidTower && !isInvalidBase;
+
+    const color = state.mouse.isValid
+      ? "rgba(0, 255, 0, 0.3)"
+      : "rgba(255, 0, 0, 0.3)";
+
+    // Desenhar o círculo de alcance
+    ctx.beginPath();
+    ctx.arc(mx, my, config.range, 0, Math.PI * 2);
+    ctx.fillStyle = color;
+    ctx.fill();
+
+    // Desenhar o corpo da torre fantasma
+    ctx.beginPath();
+    ctx.arc(mx, my, config.size / 2, 0, Math.PI * 2);
+    ctx.fillStyle = config.color;
+    ctx.globalAlpha = 0.7;
+    ctx.fill();
+    ctx.strokeStyle = "#fff";
+    ctx.stroke();
+    ctx.globalAlpha = 1.0;
+  }
+
+  // ==========================================================
+  // UPDATE E RENDER
+  // ==========================================================
+
   let last = performance.now();
 
   function update(dt) {
@@ -450,7 +619,7 @@ export async function initEngine(canvas) {
         state.cssW = newData.cssW;
         state.cssH = newData.cssH;
         state.dpr = newData.dpr;
-        ctx = newData.ctx;
+        ctx = newData.ctx; // ctx pode ser reatribuído
 
         // Recalcular elementos do jogo apenas uma vez
         state.waypoints = generateStableWaypoints(state.cssW, state.cssH);
@@ -473,6 +642,7 @@ export async function initEngine(canvas) {
 
     waveManager.update(dt, state);
 
+    // Atualizar inimigos
     for (const en of state.enemies) {
       const res = en.update(dt);
       if (res === "reached_base") {
@@ -481,8 +651,10 @@ export async function initEngine(canvas) {
       }
     }
 
+    // Atualizar torres
     for (const t of state.towers) t.update(dt, state);
 
+    // Remover inimigos mortos e dar recompensas
     const killedEnemies = state.enemies.filter((e) => e.dead);
     state.enemies = state.enemies.filter((e) => !e.dead);
 
@@ -502,17 +674,21 @@ export async function initEngine(canvas) {
     if (state.lives <= 0) {
       state.running = false;
       console.info("Game Over");
-      waveManager.dispatchEvent("game:over", {
-        reason: "no_lives",
-        finalScore: waveManager.calculateScore(state),
-      });
+      if (waveManager.dispatchEvent) {
+        waveManager.dispatchEvent("game:over", {
+          reason: "no_lives",
+          finalScore: waveManager.calculateScore
+            ? waveManager.calculateScore(state)
+            : 0,
+        });
+      }
     }
   }
 
   function render(ctx) {
     // Limpar e renderizar usando dimensões estáveis
     ctx.clearRect(0, 0, state.cssW, state.cssH);
-    ctx.fillStyle = GAME_CONFIG.visual.backgroundColor || "#0b1320";
+    ctx.fillStyle = GAME_CONFIG.visual?.backgroundColor || "#0b1320";
     ctx.fillRect(0, 0, state.cssW, state.cssH);
 
     drawGrid(ctx);
@@ -520,9 +696,16 @@ export async function initEngine(canvas) {
     renderPath(ctx, state.pathPoints);
     renderBase(ctx, state.base);
 
+    // Desenhar torres
     for (const t of state.towers) t.draw(ctx);
+
+    // Desenhar fantasma da torre
+    renderTowerGhost(ctx);
+
+    // Desenhar inimigos
     for (const e of state.enemies) e.draw(ctx);
 
+    // Overlay de pausa/game over
     if (!state.running) {
       ctx.save();
       ctx.fillStyle = "rgba(0,0,0,0.5)";
@@ -538,27 +721,9 @@ export async function initEngine(canvas) {
     }
   }
 
-  // Cliques estáveis
-  canvas.addEventListener("click", (ev) => {
-    ev.preventDefault();
-    const rect = canvas.getBoundingClientRect();
-    const xCss = ev.clientX - rect.left;
-    const yCss = ev.clientY - rect.top;
-
-    if (
-      state.selectedTowerType &&
-      xCss >= 0 &&
-      yCss >= 0 &&
-      xCss <= state.cssW &&
-      yCss <= state.cssH
-    ) {
-      const res = GameAPI.placeTowerAt(xCss, yCss, state.selectedTowerType);
-      if (!res.ok) {
-        console.warn("Não foi possível colocar torre:", res.reason);
-        flashMessage(res.reason);
-      }
-    }
-  });
+  // ==========================================================
+  // UTILIDADES
+  // ==========================================================
 
   function flashMessage(msg, ms = 1500) {
     let el = document.getElementById("engine-msg");
@@ -590,7 +755,10 @@ export async function initEngine(canvas) {
     }, ms);
   }
 
-  // Sistema de redimensionamento controlado - sem loops
+  // ==========================================================
+  // SISTEMA DE REDIMENSIONAMENTO
+  // ==========================================================
+
   let resizeTimeout;
   function handleResize() {
     clearTimeout(resizeTimeout);
@@ -608,13 +776,16 @@ export async function initEngine(canvas) {
     window.removeEventListener("resize", handleResize);
   });
 
-  // Game loop principal
+  // ==========================================================
+  // GAME LOOP PRINCIPAL
+  // ==========================================================
+
   function gameLoop(now) {
     const dt = Math.min((now - last) / 1000, 1 / 30);
     last = now;
 
     update(dt);
-    render(ctx);
+    render(ctx); // Sempre passar ctx como parâmetro
 
     requestAnimationFrame(gameLoop);
   }
