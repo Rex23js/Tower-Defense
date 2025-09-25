@@ -90,10 +90,11 @@ export const GAME_CONFIG = {
       range: 120,
       fireRate: 1,
       damage: 4,
+      size: 20,
       color: "#60a5fa",
       name: "Torre Básica",
       description: "Dano consistente e confiável.",
-      category: "basic",
+      category: "basic", // ADICIONAR ESTA LINHA
     },
 
     rapid: {
@@ -101,10 +102,11 @@ export const GAME_CONFIG = {
       range: 100,
       fireRate: 2.5,
       damage: 2,
+      size: 20,
       color: "#10b981",
       name: "Torre Rápida",
       description: "Alta cadência para lidar com enxames.",
-      category: "basic",
+      category: "basic", // ADICIONAR ESTA LINHA
     },
 
     sniper: {
@@ -112,10 +114,66 @@ export const GAME_CONFIG = {
       range: 260,
       fireRate: 0.5,
       damage: 12,
+      size: 20,
       color: "#f97316",
       name: "Sniper",
       description: "Dano alto e longo alcance, ótimo contra tanques.",
-      category: "basic",
+      category: "basic", // ADICIONAR ESTA LINHA
+    },
+  },
+
+  /**
+   * ============================================================================
+   * Configurações de Clima e Efeitos
+   * ============================================================================
+   */
+  weather: {
+    // Coordenadas para a API Open-Meteo
+    latitude: -37.8136,
+    longitude: 144.9631,
+    // Intervalo para buscar clima novamente (em segundos)
+    updateInterval: 300, // 5 minutos
+    // Efeitos aplicados a torres com base no weathercode da API.
+    effects: {
+      // Códigos 0-3: Céu limpo, poucas nuvens (sem efeito)
+      clear: {
+        codes: [0, 1, 2, 3],
+        label: "Tempo Bom",
+        icon: "☀️",
+        modifiers: [],
+      },
+      // Códigos 45, 48: Neblina
+      fog: {
+        codes: [45, 48],
+        label: "Neblina",
+        icon: "🌫️",
+        modifiers: [
+          // Reduz o alcance de torres de longo alcance
+          { category: "sniper", property: "range", multiplier: 0.7 },
+        ],
+      },
+      // Códigos 61-67: Chuva
+      rain: {
+        // Códigos 51-57 (Chuvisco), 61-67 (Chuva), 80-82 (Aguaceiros)
+        codes: [51, 53, 55, 56, 57, 61, 63, 65, 66, 67, 80, 81, 82],
+        label: "Chuva",
+        icon: "🌧️",
+        modifiers: [
+          { category: "basic", property: "fireRate", multiplier: 0.9 },
+        ],
+      },
+      // Tempestade
+      storm: {
+        codes: [95, 96, 99],
+        label: "Tempestade",
+        icon: "⛈️",
+        modifiers: [
+          // Efeito 1: Reduz alcance das torres básicas
+          { category: "basic", property: "range", multiplier: 0.8 },
+          // Efeito 2: Reduz a velocidade de tiro das snipers
+          { category: "sniper", property: "fireRate", multiplier: 0.85 },
+        ],
+      },
     },
   },
 

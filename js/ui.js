@@ -164,6 +164,21 @@ export function bindUI() {
 
     setupShopTabs();
     setupShopItems();
+    // ADICIONAR este listener no final da função:
+    window.addEventListener("weather:update", (event) => {
+      const weather = event.detail;
+      if (!weather) return;
+
+      const weatherEl = document.getElementById("weather-status");
+      if (weatherEl) {
+        const iconEl = weatherEl.querySelector(".weather-icon");
+        const labelEl = weatherEl.querySelector(".weather-label");
+
+        if (iconEl) iconEl.textContent = weather.icon;
+        if (labelEl) labelEl.textContent = weather.label;
+        weatherEl.title = `Clima: ${weather.label}`;
+      }
+    });
   }
 
   function setupShopTabs() {

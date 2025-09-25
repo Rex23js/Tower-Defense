@@ -923,3 +923,55 @@ button:focus,
   width: 100%;
   height: 100%;
 }
+
+/* ========================================================== */
+/* ESTILOS DO PAINEL DE DEBUG                                 */
+/* ========================================================== */
+.debug-panel {
+  position: fixed;
+  bottom: 10px;
+  left: 10px;
+  background-color: rgba(10, 20, 40, 0.85);
+  color: white;
+  padding: 12px;
+  border-radius: 8px;
+  border: 1px solid #4a5568;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+  font-family: Inter, Arial, sans-serif;
+  z-index: 9999;
+  display: none; /* Escondido por padrão */
+}
+
+/* Mostra o painel quando a classe is-visible é adicionada */
+.debug-panel.is-visible {
+  display: block;
+}
+
+.debug-panel h4 {
+  margin: 0 0 10px 0;
+  font-size: 14px;
+  text-align: center;
+  border-bottom: 1px solid #4a5568;
+  padding-bottom: 8px;
+}
+
+.debug-panel .debug-buttons {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.debug-panel button {
+  background-color: #2d3748;
+  color: white;
+  border: 1px solid #4a5568;
+  border-radius: 4px;
+  padding: 8px;
+  font-size: 12px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.debug-panel button:hover {
+  background-color: #4a5568;
+}

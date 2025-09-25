@@ -229,6 +229,48 @@ document.body.addEventListener("click", (e) => {
   }
 });
 
+/**
+ * Configura o painel de depuração se o parâmetro de URL for encontrado.
+ * @param {object} api - A GameAPI retornada pelo initEngine.
+ */
+function setupDebugPanel(api) {
+  const params = new URLSearchParams(window.location.search);
+  const debugPanel = document.getElementById("debug-panel");
+
+  if (params.get("debug") === "true" && debugPanel) {
+    debugPanel.classList.add("is-visible");
+
+    debugPanel.addEventListener("click", (event) => {
+      if (event.target.tagName === "BUTTON") {
+        const code = event.target.dataset.weathercode;
+        if (code && api && typeof api.forceWeather === "function") {
+          api.forceWeather(parseInt(code, 10));
+        }
+      }
+    });
+  }
+}
+
+
+async function renderRoute() {
+  // ... (código existente da função)
+
+  if (hash === "#/game") {
+    // ...
+    try {
+      showPage("page-game");
+      const canvas = document.getElementById("game-canvas");
+      currentGameAPI = await initEngine(canvas);
+      window.__attachGameAPI(currentGameAPI);
+
+      // ADICIONE ESTA LINHA AQUI
+      setupDebugPanel(currentGameAPI); // Ativa o painel de debug após o jogo iniciar
+
+    } catch (e) {
+      // ...
+    }
+  }
+
 // Escutar mudanças de hash
 window.addEventListener("hashchange", renderRoute);
 

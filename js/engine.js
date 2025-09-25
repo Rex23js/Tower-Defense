@@ -1,5 +1,5 @@
 // js/engine.js
-import { getWaves } from "./api.js";
+import { getWaves, safeGetWeather } from "./api.js";
 import { WaveManager } from "./wave-manager.js";
 import { Enemy, Tower } from "./entities.js";
 import { GAME_CONFIG } from "./game-config.js";
@@ -219,6 +219,10 @@ export async function initEngine(canvas) {
   const initialWaypoints = generateStableWaypoints(cssW, cssH);
 
   const state = {
+    // ADICIONAR estas duas linhas:
+    currentWeather: null,
+    activeWeatherEffect: null,
+    weatherTimer: 0,
     enemies: [],
     towers: [],
     gold: DEFAULTS.startGold,
@@ -391,8 +395,31 @@ export async function initEngine(canvas) {
     setAutoWaves: (enabled) => waveManager.setAutoWaves(enabled),
     toggleAutoWaves: () => waveManager.toggleAutoWaves(),
     getWaveStatus: () => waveManager.getStatus(),
-    getState: () => state,
-    getWaveManager: () => waveManager,
+    getState: () => ({ ...state }),
+    getWaveManager: () => state.waveManager,
+    placeTower: placeTower,
+    sellTower: sellTower,
+    getTowerAt: getTowerAt,
+    upgradeTower: upgradeTower,
+    toggleAutoWaves: () => state.waveManager.toggleAutoWaves(),
+    startNextWave: () => state.waveManager.startNextWave(),
+
+    /**
+     * FORÇA A MUDANÇA DE CLIMA PARA TESTES (DEBUG)
+     */
+    forceWeather(code) {
+      console.log(`[DEBUG] Forçando clima com código: ${code}`);
+      const mockWeatherData = {
+        weathercode: code,
+        temperature: 20,
+      };
+      processWeather(mockWeatherData, state);
+    },
+
+    destroy() {
+      state.running = false;
+      // Adicione aqui qualquer outra limpeza necessária
+    },
   };
 
   // ==========================================================
@@ -400,11 +427,45 @@ export async function initEngine(canvas) {
   // ==========================================================
 
   try {
-    state.waves = await getWaves();
-    waveManager.initialize(state.waves);
+    // Carregar waves e clima em paralelo
+    const [wavesResp, weatherResp] = await Promise.allSettled([
+      getWaves(),
+      safeGetWeather(
+        GAME_CONFIG.weather.latitude,
+        GAME_CONFIG.weather.longitude
+      ),
+    ]);
+
+    // Processar waves
+    // Processar waves
+    if (wavesResp.status === "fulfilled" && wavesResp.value.data) {
+      waveManager.initialize(wavesResp.value.data); // <--- LINHA CORRETA
+    } else {
+      console.warn(
+        "Falha ao carregar waves; usando configuração local",
+        wavesResp.reason
+      );
+      waveManager.initialize(GAME_CONFIG.waveDefinitions);
+    }
+
+    // Processar clima
+    if (weatherResp.status === "fulfilled") {
+      processWeather(weatherResp.value.data, state);
+      console.info(
+        `Clima carregado: ${state.activeWeatherEffect?.label}`,
+        weatherResp.value.meta
+      );
+    } else {
+      console.warn(
+        "Falha ao carregar clima; usando tempo limpo",
+        weatherResp.reason
+      );
+      processWeather({ weathercode: 0, temperature: 20 }, state);
+    }
   } catch (e) {
-    console.warn("Falha ao carregar waves; usando configuração local", e);
+    console.warn("Falha geral na inicialização; usando fallbacks", e);
     waveManager.initialize(GAME_CONFIG.waveDefinitions);
+    processWeather({ weathercode: 0, temperature: 20 }, state);
   }
 
   waveManager.spawnEnemy = (type, gameState) => {
@@ -622,77 +683,58 @@ export async function initEngine(canvas) {
   function update(dt) {
     if (!state.running) return;
 
-    // Verificar se precisa recalcular layout (apenas uma vez por mudança)
-    if (state.needsRecalc) {
-      const newData = setupStableCanvas(canvas);
-      if (newData) {
-        // Atualizar dimensões
-        state.cssW = newData.cssW;
-        state.cssH = newData.cssH;
-        state.dpr = newData.dpr;
-        ctx = newData.ctx; // ctx pode ser reatribuído
+    // 1. ATUALIZAÇÕES GERAIS E DE CLIMA
+    // Aplica efeitos e verifica se é hora de buscar um novo clima
+    updateWeatherTimer(dt, state);
+    applyWeatherEffects(state);
 
-        // Recalcular elementos do jogo apenas uma vez
-        state.waypoints = generateStableWaypoints(state.cssW, state.cssH);
-        state.pathPoints = buildSmoothPath(
-          state.waypoints,
-          PATH_SAMPLE_PER_SEG
-        );
-        state.pathObj = buildPathDistances(state.pathPoints);
+    // 2. LÓGICA DE ATUALIZAÇÃO DAS ENTIDADES
+    // Gerencia o spawn de novos inimigos
+    state.waveManager.update(dt);
 
-        const baseSize = Math.min(state.cssW, state.cssH) * 0.12;
-        state.base.centerX = state.waypoints[0].x;
-        state.base.centerY = state.waypoints[0].y;
-        state.base.width = baseSize;
-        state.base.height = baseSize;
+    // Atualiza a posição e o estado de cada torre
+    state.towers.forEach((t) => t.update(dt, state.enemies));
 
-        state.decorations = generateDecorations();
-        state.needsRecalc = false; // Marcar como concluído
-      }
-    }
+    // Atualiza a posição e o estado de cada inimigo
+    state.enemies.forEach((e) => e.update(dt));
 
-    waveManager.update(dt, state);
+    // Atualiza a posição e o estado de cada projétil
+    state.projectiles.forEach((p) => p.update(dt, state.enemies));
 
-    // Atualizar inimigos
-    for (const en of state.enemies) {
-      const res = en.update(dt);
-      if (res === "reached_base") {
-        state.lives -= 1;
-        waveManager.onEnemyDefeated(en);
-      }
-    }
+    // Atualiza efeitos visuais (explosões, etc.)
+    state.effects.forEach((e) => e.update(dt));
 
-    // Atualizar torres
-    for (const t of state.towers) t.update(dt, state);
-
-    // Remover inimigos mortos e dar recompensas
+    // 3. PROCESSAMENTO DE RESULTADOS E LIMPEZA
+    // Filtra os inimigos que foram mortos neste frame
     const killedEnemies = state.enemies.filter((e) => e.dead);
-    state.enemies = state.enemies.filter((e) => !e.dead);
-
     if (killedEnemies.length > 0) {
       killedEnemies.forEach((enemy) => {
-        waveManager.onEnemyDefeated(enemy);
+        state.gold += enemy.goldValue; // Dá o ouro ao jogador
+        state.waveManager.onEnemyDefeated(enemy);
       });
     }
 
-    // Atualizar HUD
-    const goldEl = document.getElementById("gold");
-    const livesEl = document.getElementById("lives");
-    if (goldEl) goldEl.textContent = `Ouro: ${state.gold}`;
-    if (livesEl) livesEl.textContent = `Vidas: ${state.lives}`;
+    // Remove inimigos mortos e efeitos inativos da lista principal
+    state.enemies = state.enemies.filter((e) => !e.dead);
+    state.effects = state.effects.filter((e) => e.active);
 
-    // Game Over
+    // Verifica se inimigos chegaram à base
+    state.enemies.forEach((en) => {
+      if (en.hasReachedBase) {
+        state.lives -= 1;
+        en.dead = true; // Marca o inimigo para ser removido no próximo frame
+        state.waveManager.onEnemyDefeated(en);
+      }
+    });
+
+    // Remove novamente caso algum inimigo tenha chegado à base
+    state.enemies = state.enemies.filter((e) => !e.dead);
+
+    // 4. VERIFICAÇÃO DE FIM DE JOGO
     if (state.lives <= 0) {
       state.running = false;
-      console.info("Game Over");
-      if (waveManager.dispatchEvent) {
-        waveManager.dispatchEvent("game:over", {
-          reason: "no_lives",
-          finalScore: waveManager.calculateScore
-            ? waveManager.calculateScore(state)
-            : 0,
-        });
-      }
+      console.info("Game Over: Vidas zeradas.");
+      // Dispara evento de game over para a UI
     }
   }
 
@@ -787,18 +829,96 @@ export async function initEngine(canvas) {
     window.removeEventListener("resize", handleResize);
   });
 
-  // ==========================================================
-  // GAME LOOP PRINCIPAL
-  // ==========================================================
+  /**
+   * Processa a resposta da API de clima e define o efeito ativo no estado do jogo.
+   */
+  function processWeather(weatherData, state) {
+    state.currentWeather = weatherData;
+    const code = weatherData.weathercode || 0;
+    const effects = GAME_CONFIG.weather.effects;
+
+    // Encontra qual efeito corresponde ao código atual
+    let activeEffect = effects.clear; // Padrão
+    for (const key in effects) {
+      if (effects[key].codes.includes(code)) {
+        activeEffect = effects[key];
+        break;
+      }
+    }
+    state.activeWeatherEffect = activeEffect;
+
+    // Atualiza a UI
+    window.dispatchEvent(
+      new CustomEvent("weather:update", { detail: state.activeWeatherEffect })
+    );
+  }
+
+  /**
+   * Aplica os modificadores de clima às torres.
+   */
+  function applyWeatherEffects(state) {
+    if (
+      !state.activeWeatherEffect ||
+      state.activeWeatherEffect.modifiers.length === 0
+    ) {
+      return;
+    }
+
+    const modifiers = state.activeWeatherEffect.modifiers;
+
+    for (const tower of state.towers) {
+      // Reseta para valores base
+      tower.resetToBaseline();
+
+      // Aplica modificadores que afetam esta torre
+      for (const mod of modifiers) {
+        if (mod.category && tower.category === mod.category) {
+          tower[mod.property] *= mod.multiplier;
+        }
+      }
+    }
+  }
+
+  /**
+   * Atualiza o timer do clima e busca novos dados quando necessário.
+   */
+  function updateWeatherTimer(dt, state) {
+    state.weatherTimer += dt;
+    if (state.weatherTimer >= GAME_CONFIG.weather.updateInterval) {
+      state.weatherTimer = 0;
+      // Buscar clima em background (sem bloquear o jogo)
+      safeGetWeather(
+        GAME_CONFIG.weather.latitude,
+        GAME_CONFIG.weather.longitude
+      )
+        .then((response) => {
+          processWeather(response.data, state);
+          console.info("Clima atualizado:", state.activeWeatherEffect?.label);
+        })
+        .catch((err) => console.warn("Falha na atualização do clima:", err));
+    }
+  }
+  // js/engine.js
+
+  // js/engine.js
 
   function gameLoop(now) {
     const dt = Math.min((now - last) / 1000, 1 / 30);
     last = now;
 
-    update(dt);
-    render(ctx); // Sempre passar ctx como parâmetro
+    if (state.needsRecalc) {
+      recalcLayout();
+      state.needsRecalc = false;
+    }
 
-    requestAnimationFrame(gameLoop);
+    // Chama a função update principal que agora contém toda a lógica
+    update(dt);
+
+    draw();
+
+    if (state.running) {
+      requestAnimationFrame(gameLoop);
+    }
   }
 
   // Iniciar o loop

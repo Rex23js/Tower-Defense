@@ -178,6 +178,19 @@ export class Tower {
     this.retargetTimer = 0;
     this.retargetInterval =
       typeof cfg.retargetInterval === "number" ? cfg.retargetInterval : 0.25;
+    this.category = cfg.category || "basic";
+    // Armazena os valores base para poder resetá-los
+    this.baseline = {
+      damage: this.damage,
+      range: this.range,
+      fireRate: this.fireRate,
+    };
+  }
+
+  resetToBaseline() {
+    this.damage = this.baseline.damage;
+    this.range = this.baseline.range;
+    this.fireRate = this.baseline.fireRate;
   }
 
   update(dt, gameState) {

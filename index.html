@@ -104,6 +104,10 @@
                 <span id="lives">Vidas: 20</span>
                 <span id="wave">Wave: 0</span>
                 <span id="enemy-count">Inimigos: 0</span>
+                <span id="weather-status" title="Condição do Clima">
+                  <span class="weather-icon">☀️</span>
+                  <span class="weather-label">Tempo Bom</span>
+                </span>
               </div>
 
               <div class="controls-inline">
@@ -188,6 +192,15 @@
         </div>
       </section>
     </template>
+    <div id="debug-panel" class="debug-panel">
+      <h4>Clima (Debug)</h4>
+      <div class="debug-buttons">
+        <button data-weathercode="0">☀️ Limpo</button>
+        <button data-weathercode="45">🌫️ Neblina</button>
+        <button data-weathercode="61">🌧️ Chuva</button>
+        <button data-weathercode="95">⛈️ Temp.</button>
+      </div>
+    </div>
 
     <script type="module" src="js/main.js"></script>
   </body>
