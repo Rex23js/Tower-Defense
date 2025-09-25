@@ -21,14 +21,8 @@ export const GAME_CONFIG = {
   /**
    * ============================================================================
    * Enemy Types - Definições dos tipos de inimigos
-   *
-   * Removidos/alterados efeitos que aplicavam debuff diretamente às torres.
-   * Em vez disso, alguns inimigos agora aplicam efeitos a inimigos ao morrer
-   * (clouds/auras) ou possuem atributos internos, sem impactar torres.
    * ============================================================================
    */
-  /* --- SUGESTÃO DE CONFIG REDUZIDO (cole no lugar do bloco longo) --- */
-
   enemyTypes: {
     basic: {
       speed: 70,
@@ -94,7 +88,7 @@ export const GAME_CONFIG = {
       color: "#60a5fa",
       name: "Torre Básica",
       description: "Dano consistente e confiável.",
-      category: "basic", // ADICIONAR ESTA LINHA
+      category: "basic",
     },
 
     rapid: {
@@ -106,7 +100,7 @@ export const GAME_CONFIG = {
       color: "#10b981",
       name: "Torre Rápida",
       description: "Alta cadência para lidar com enxames.",
-      category: "basic", // ADICIONAR ESTA LINHA
+      category: "basic",
     },
 
     sniper: {
@@ -118,7 +112,7 @@ export const GAME_CONFIG = {
       color: "#f97316",
       name: "Sniper",
       description: "Dano alto e longo alcance, ótimo contra tanques.",
-      category: "basic", // ADICIONAR ESTA LINHA
+      category: "basic",
     },
   },
 
@@ -252,7 +246,7 @@ export const GAME_CONFIG = {
       enemies: [{ type: "boss", count: 1 }],
       goldReward: 400,
       isBossWave: true,
-    }, // mini-boss style
+    },
     {
       id: 11,
       enemies: [
@@ -270,15 +264,15 @@ export const GAME_CONFIG = {
       ],
       goldReward: 1200,
       isBossWave: true,
-    }, // final boss
+    },
   ],
-  /* --- FIM DO BLOCO REDUZIDO --- */
+
   visual: {
     // fundo do jogo (CSS pixels)
-    backgroundColor: "#0b1320", // fundo escuro
-    // cores e larguras do caminho (use esses pra ver o contraste)
-    pathColor: "#1a1a1a", // cor do corpo do caminho (escuro)
-    pathBorderColor: "#ffffff", // borda externa clara
+    backgroundColor: "#0b1320",
+    // cores e larguras do caminho
+    pathColor: "#1a1a1a",
+    pathBorderColor: "#ffffff",
     pathWidth: 48,
     pathBorderWidth: 3,
     pathRadiusBlock: 32,
@@ -288,6 +282,9 @@ export const GAME_CONFIG = {
     // base
     baseColor: "#111827",
     baseStripeColor: "#f3f4f6",
+    // ghost tower visualization
+    ghostRangeScale: 0.6,
+    ghostBodyScale: 0.25,
   },
 
   // Configurações da base

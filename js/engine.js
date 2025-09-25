@@ -46,7 +46,6 @@ function catmullRom(p0, p1, p2, p3, t) {
 function buildSmoothPath(waypoints, segmentsPerCurve = PATH_SAMPLE_PER_SEG) {
   if (!waypoints || waypoints.length < 2) return [...(waypoints || [])];
   const pts = [];
-  // cria array 'extended' com repetição das pontas para suavizar curva
   const extended = [
     waypoints[0],
     ...waypoints,
@@ -98,14 +97,12 @@ function samplePointAtDistance(pathObj, distance) {
   return points[points.length - 1];
 }
 
-// Função que calcula distância real aos segmentos do caminho
 function distanceToPath(pt, pathPoints) {
   if (!pathPoints || pathPoints.length === 0) return Infinity;
   let minD = Infinity;
   for (let i = 0; i < pathPoints.length - 1; i++) {
     const a = pathPoints[i];
     const b = pathPoints[i + 1];
-    // projetar pt sobre o segmento AB
     const vx = b.x - a.x;
     const vy = b.y - a.y;
     const wx = pt.x - a.x;
@@ -139,7 +136,6 @@ function getMousePos(canvas, evt) {
   };
 }
 
-// Sistema de canvas estável - sem loops de redimensionamento
 function setupStableCanvas(canvas) {
   const container = canvas.parentElement;
   let lastWidth = 0;
@@ -150,12 +146,11 @@ function setupStableCanvas(canvas) {
     const newWidth = Math.max(300, Math.floor(containerRect.width));
     const newHeight = Math.max(200, Math.floor(containerRect.height));
 
-    // Só atualizar se realmente mudou significativamente
     if (
       Math.abs(newWidth - lastWidth) < 2 &&
       Math.abs(newHeight - lastHeight) < 2
     ) {
-      return null; // Sem mudança significativa
+      return null;
     }
 
     lastWidth = newWidth;
@@ -163,7 +158,6 @@ function setupStableCanvas(canvas) {
 
     const dpr = Math.min(window.devicePixelRatio || 1, 2);
 
-    // Aplicar tamanhos sem trigger de novos eventos
     canvas.style.width = newWidth + "px";
     canvas.style.height = newHeight + "px";
     canvas.width = Math.floor(newWidth * dpr);
@@ -180,7 +174,6 @@ function setupStableCanvas(canvas) {
   return updateCanvasSize();
 }
 
-// Gera waypoints estáveis e proporcionais (mantendo a pista em formato de labirinto)
 function generateStableWaypoints(cssW, cssH) {
   const margin = Math.min(cssW, cssH) * 0.08;
   const segmentW = (cssW - margin * 2) / 6;
@@ -202,29 +195,106 @@ function generateStableWaypoints(cssW, cssH) {
   ];
 }
 
+/**
+ * Processa a resposta da API de clima e define o efeito ativo no estado do jogo.
+ */
+function processWeather(weatherData, state) {
+  state.currentWeather = weatherData;
+  const code = weatherData?.weathercode || 0;
+  const effects = GAME_CONFIG.weather?.effects || {};
+
+  let activeEffect = effects.clear || {
+    label: "Tempo Bom",
+    icon: "☀️",
+    modifiers: [],
+  };
+  for (const key in effects) {
+    const eff = effects[key];
+    if (Array.isArray(eff?.codes) && eff.codes.includes(code)) {
+      activeEffect = eff;
+      break;
+    }
+  }
+  state.activeWeatherEffect = activeEffect;
+
+  window.dispatchEvent(
+    new CustomEvent("weather:update", { detail: state.activeWeatherEffect })
+  );
+}
+
+/**
+ * Aplica os modificadores de clima às torres.
+ */
+function applyWeatherEffects(state) {
+  if (
+    !state.activeWeatherEffect ||
+    !state.activeWeatherEffect.modifiers ||
+    state.activeWeatherEffect.modifiers.length === 0
+  ) {
+    return;
+  }
+
+  const modifiers = state.activeWeatherEffect.modifiers;
+
+  for (const tower of state.towers) {
+    if (typeof tower.resetToBaseline === "function") {
+      tower.resetToBaseline();
+    }
+
+    for (const mod of modifiers) {
+      if (
+        mod.category &&
+        tower.category === mod.category &&
+        tower[mod.property]
+      ) {
+        tower[mod.property] *= mod.multiplier;
+      }
+    }
+  }
+}
+
+/**
+ * Atualiza o timer do clima e busca novos dados quando necessário.
+ */
+function updateWeatherTimer(dt, state) {
+  state.weatherTimer += dt;
+  if (state.weatherTimer >= (GAME_CONFIG.weather?.updateInterval || 300)) {
+    state.weatherTimer = 0;
+    safeGetWeather(
+      GAME_CONFIG.weather?.latitude || -30.0346,
+      GAME_CONFIG.weather?.longitude || -51.2177
+    )
+      .then((response) => {
+        processWeather(response.data, state);
+        console.info("Clima atualizado:", state.activeWeatherEffect?.label);
+      })
+      .catch((err) => console.warn("Falha na atualização do clima:", err));
+  }
+}
+
 // ==========================================================
 // INÍCIO DO ENGINE
 // ==========================================================
 
 export async function initEngine(canvas) {
-  if (!canvas) return;
+  if (!canvas) return null;
 
   // Configuração inicial estável
-  let canvasData = setupStableCanvas(canvas);
-  if (!canvasData) return; // Falha na configuração inicial
+  const canvasData = setupStableCanvas(canvas);
+  if (!canvasData) return null;
 
   let { cssW, cssH, dpr, ctx } = canvasData;
 
-  // Estado inicial fixo
+  // Estado inicial
   const initialWaypoints = generateStableWaypoints(cssW, cssH);
-
   const state = {
-    // ADICIONAR estas duas linhas:
     currentWeather: null,
     activeWeatherEffect: null,
     weatherTimer: 0,
     enemies: [],
     towers: [],
+    projectiles: [], // INICIALIZADO
+    effects: [], // INICIALIZADO
     gold: DEFAULTS.startGold,
     lives: DEFAULTS.startLives,
     currentWave: 0,
@@ -233,10 +303,9 @@ export async function initEngine(canvas) {
     selectedTowerType: null,
     mouse: { x: 0, y: 0, isValid: false },
     canvas,
-    // Elementos estáticos que não mudam durante o jogo
     waypoints: initialWaypoints,
     pathPoints: buildSmoothPath(initialWaypoints, PATH_SAMPLE_PER_SEG),
-    pathObj: null, // será calculado após pathPoints
+    pathObj: null,
     base: {
       centerX: initialWaypoints[0].x,
       centerY: initialWaypoints[0].y,
@@ -245,18 +314,14 @@ export async function initEngine(canvas) {
       hp: GAME_CONFIG.base?.hp || 100,
     },
     decorations: [],
-    // Dimensões atuais
     cssW,
     cssH,
     dpr,
-    // Flag para controlar recalculamentos
     needsRecalc: false,
   };
 
-  // Calcular pathObj após pathPoints estar definido
   state.pathObj = buildPathDistances(state.pathPoints);
 
-  // Gerar decorações uma vez
   function generateDecorations() {
     const decs = [];
     const density = Math.floor((state.cssW * state.cssH) / 12000);
@@ -284,6 +349,8 @@ export async function initEngine(canvas) {
   state.decorations = generateDecorations();
 
   const waveManager = new WaveManager();
+  // CORRIGIDO: expor a instância no state
+  state.waveManager = waveManager;
 
   // ==========================================================
   // EVENT LISTENERS
@@ -304,13 +371,13 @@ export async function initEngine(canvas) {
 
     const { x: mx, y: my } = getMousePos(canvas, e);
     const config = GAME_CONFIG.towerTypes[state.selectedTowerType];
+    if (!config) return;
 
     if (state.gold < config.cost) {
       flashMessage("Ouro insuficiente!");
       return;
     }
 
-    // Usar distanceToPath para verificação precisa
     const dToPath = distanceToPath({ x: mx, y: my }, state.pathPoints);
     const isInvalidPath = dToPath < PATH_RADIUS_BLOCK;
     const isInvalidTower = isOverlappingAnotherTower(
@@ -320,7 +387,6 @@ export async function initEngine(canvas) {
       state.towers
     );
 
-    // Verificar colisão com base
     const baseLeft = state.base.centerX - state.base.width / 2;
     const baseRight = state.base.centerX + state.base.width / 2;
     const baseTop = state.base.centerY - state.base.height / 2;
@@ -345,101 +411,107 @@ export async function initEngine(canvas) {
   canvas.addEventListener("click", handleClick);
 
   // ==========================================================
-  // API PÚBLICA
+  // FUNÇÕES AUXILIARES (CORRIGIDAS)
   // ==========================================================
 
+  function getTowerAt(x, y) {
+    return state.towers.find((t) => Math.hypot(t.x - x, t.y - y) <= t.size);
+  }
+
+  function placeTower(x, y, type) {
+    const cfg = GAME_CONFIG.towerTypes[type];
+    if (!cfg) return { ok: false, reason: "tipo inválido" };
+    if (state.gold < cfg.cost)
+      return { ok: false, reason: "ouro insuficiente" };
+
+    const dToPath = distanceToPath({ x, y }, state.pathPoints);
+    if (dToPath < PATH_RADIUS_BLOCK) return { ok: false, reason: "no_path" };
+    if (isOverlappingAnotherTower(x, y, cfg.size, state.towers))
+      return { ok: false, reason: "overlap" };
+
+    state.gold -= cfg.cost;
+    const tower = new Tower(x, y, type);
+    state.towers.push(tower);
+    return { ok: true, tower };
+  }
+
+  function sellTower(tower) {
+    const idx = state.towers.indexOf(tower);
+    if (idx === -1) return { ok: false };
+    const refund = Math.floor(tower.cost * 0.5);
+    state.gold += refund;
+    state.towers.splice(idx, 1);
+    return { ok: true, refund };
+  }
+
+  function upgradeTower(tower, upgradeType) {
+    if (!tower) return { ok: false, reason: "no tower" };
+    const res = tower.upgrade && tower.upgrade(upgradeType);
+    return res || { ok: false, reason: "upgrade not available" };
+  }
+
+  // ==========================================================
+  // API PÚBLICA (CORRIGIDA)
+  // ==========================================================
+
+  let rafId = null;
+
   GameAPI = {
-    placeTowerAt: (x, y, type) => {
-      const towerConfig = GAME_CONFIG.towerTypes[type];
-      if (!towerConfig) return { ok: false, reason: "tipo inválido" };
-      if (state.gold < towerConfig.cost)
-        return { ok: false, reason: "ouro insuficiente" };
-
-      // Verificar colisão com base
-      const baseLeft = state.base.centerX - state.base.width / 2;
-      const baseRight = state.base.centerX + state.base.width / 2;
-      const baseTop = state.base.centerY - state.base.height / 2;
-      const baseBottom = state.base.centerY + state.base.height / 2;
-
-      if (x >= baseLeft && x <= baseRight && y >= baseTop && y <= baseBottom) {
-        return { ok: false, reason: "não pode construir sobre a base" };
-      }
-
-      // Usar distanceToPath para verificação precisa
-      const dToPath = distanceToPath({ x, y }, state.pathPoints);
-      if (dToPath < PATH_RADIUS_BLOCK)
-        return { ok: false, reason: "não pode construir no caminho" };
-
-      // Verificar sobreposição com outras torres
-      if (isOverlappingAnotherTower(x, y, towerConfig.size, state.towers)) {
-        return { ok: false, reason: "muito próximo de outra torre" };
-      }
-
-      state.gold -= towerConfig.cost;
-      state.towers.push(new Tower(x, y, type));
-      return { ok: true };
-    },
-
+    placeTowerAt: (x, y, type) => placeTower(x, y, type),
     selectTowerType: (type) => {
       state.selectedTowerType = type;
     },
-
     startNextWave: () => waveManager.startNextWave(state),
-
     togglePause: () => {
       state.running = !state.running;
       if (state.running) waveManager.resumeGame();
       else waveManager.pauseGame();
     },
-
     setAutoWaves: (enabled) => waveManager.setAutoWaves(enabled),
     toggleAutoWaves: () => waveManager.toggleAutoWaves(),
     getWaveStatus: () => waveManager.getStatus(),
     getState: () => ({ ...state }),
-    getWaveManager: () => state.waveManager,
+    getWaveManager: () => waveManager, // CORRIGIDO: retorna a instância real
     placeTower: placeTower,
     sellTower: sellTower,
     getTowerAt: getTowerAt,
     upgradeTower: upgradeTower,
-    toggleAutoWaves: () => state.waveManager.toggleAutoWaves(),
-    startNextWave: () => state.waveManager.startNextWave(),
 
-    /**
-     * FORÇA A MUDANÇA DE CLIMA PARA TESTES (DEBUG)
-     */
     forceWeather(code) {
       console.log(`[DEBUG] Forçando clima com código: ${code}`);
-      const mockWeatherData = {
-        weathercode: code,
-        temperature: 20,
-      };
+      const mockWeatherData = { weathercode: code, temperature: 20 };
       processWeather(mockWeatherData, state);
     },
 
     destroy() {
       state.running = false;
-      // Adicione aqui qualquer outra limpeza necessária
+      if (rafId) cancelAnimationFrame(rafId);
+      try {
+        canvas.removeEventListener("mousemove", handleMouseMove);
+        canvas.removeEventListener("mouseleave", handleMouseLeave);
+        canvas.removeEventListener("click", handleClick);
+        window.removeEventListener("resize", handleResize);
+      } catch (e) {
+        // ignore
+      }
     },
   };
 
   // ==========================================================
-  // INICIALIZAÇÃO DAS WAVES
+  // INICIALIZAÇÃO DAS WAVES E CLIMA
   // ==========================================================
 
   try {
-    // Carregar waves e clima em paralelo
     const [wavesResp, weatherResp] = await Promise.allSettled([
       getWaves(),
       safeGetWeather(
-        GAME_CONFIG.weather.latitude,
-        GAME_CONFIG.weather.longitude
+        GAME_CONFIG.weather?.latitude || -30.0346,
+        GAME_CONFIG.weather?.longitude || -51.2177
       ),
     ]);
 
-    // Processar waves
-    // Processar waves
-    if (wavesResp.status === "fulfilled" && wavesResp.value.data) {
-      waveManager.initialize(wavesResp.value.data); // <--- LINHA CORRETA
+    if (wavesResp.status === "fulfilled" && wavesResp.value?.data) {
+      waveManager.initialize(wavesResp.value.data);
     } else {
       console.warn(
         "Falha ao carregar waves; usando configuração local",
@@ -448,11 +520,11 @@ export async function initEngine(canvas) {
       waveManager.initialize(GAME_CONFIG.waveDefinitions);
     }
 
-    // Processar clima
-    if (weatherResp.status === "fulfilled") {
+    if (weatherResp.status === "fulfilled" && weatherResp.value?.data) {
       processWeather(weatherResp.value.data, state);
       console.info(
-        `Clima carregado: ${state.activeWeatherEffect?.label}`,
+        "Clima carregado:",
+        state.activeWeatherEffect?.label,
         weatherResp.value.meta
       );
     } else {
@@ -468,10 +540,11 @@ export async function initEngine(canvas) {
     processWeather({ weathercode: 0, temperature: 20 }, state);
   }
 
-  waveManager.spawnEnemy = (type, gameState) => {
-    const startDistance = gameState.pathObj.total + 24 + Math.random() * 60;
-    const e = new Enemy(type, startDistance, gameState.pathObj);
-    gameState.enemies.push(e);
+  // CORRIGIDO: sobrescreve spawn para usar state corretamente
+  waveManager.spawnEnemy = (type) => {
+    const startDistance = state.pathObj.total + 24 + Math.random() * 60;
+    const e = new Enemy(type, startDistance, state.pathObj);
+    state.enemies.push(e);
   };
 
   // ==========================================================
@@ -536,7 +609,6 @@ export async function initEngine(canvas) {
 
     ctx.save();
 
-    // Caminho principal
     ctx.beginPath();
     ctx.moveTo(pathPoints[0].x, pathPoints[0].y);
     for (let i = 1; i < pathPoints.length; i++) {
@@ -549,7 +621,6 @@ export async function initEngine(canvas) {
     ctx.lineJoin = "round";
     ctx.stroke();
 
-    // Borda do caminho
     ctx.beginPath();
     ctx.moveTo(pathPoints[0].x, pathPoints[0].y);
     for (let i = 1; i < pathPoints.length; i++) {
@@ -562,7 +633,6 @@ export async function initEngine(canvas) {
     ctx.stroke();
     ctx.globalCompositeOperation = "source-over";
 
-    // Linha central
     ctx.beginPath();
     ctx.moveTo(pathPoints[0].x, pathPoints[0].y);
     for (let i = 1; i < pathPoints.length; i++) {
@@ -586,25 +656,20 @@ export async function initEngine(canvas) {
 
     ctx.save();
 
-    // Base principal
     ctx.fillStyle = "#2a2a2a";
     ctx.fillRect(left, top, base.width, base.height);
 
-    // Borda
     ctx.strokeStyle = "#ffffff";
     ctx.lineWidth = Math.max(2, base.width / 30);
     ctx.strokeRect(left, top, base.width, base.height);
 
-    // Cruz médica
     ctx.fillStyle = "#ffffff";
-    // Horizontal
     ctx.fillRect(
       base.centerX - crossSize / 2,
       base.centerY - crossSize / 6,
       crossSize,
       crossSize / 3
     );
-    // Vertical
     ctx.fillRect(
       base.centerX - crossSize / 6,
       base.centerY - crossSize / 2,
@@ -619,18 +684,18 @@ export async function initEngine(canvas) {
     if (!state.selectedTowerType) return;
 
     const config = GAME_CONFIG.towerTypes[state.selectedTowerType];
+    if (!config) return;
+
     const mx = state.mouse.x;
     const my = state.mouse.y;
 
-    // Validações
     const dToPath = distanceToPath({ x: mx, y: my }, state.pathPoints);
     const isInvalidPath = dToPath < PATH_RADIUS_BLOCK;
     const isInvalidTower = isOverlappingAnotherTower(
       mx,
       my,
       config.size,
-      state.towers,
-      { ignoreRecentMs: 200 } // mantém sua proteção contra a torre recém-criada
+      state.towers
     );
 
     const baseLeft = state.base.centerX - state.base.width / 2;
@@ -646,24 +711,19 @@ export async function initEngine(canvas) {
       ? "rgba(0, 255, 0, 0.3)"
       : "rgba(255, 0, 0, 0.3)";
 
-    // ===== Ajuste aqui para encolher o visual =====
-    // Valores de exemplo: 0.25 deixa o corpo bem pequeno; 0.5 é médio; 1.0 = tamanho "real".
-    const GHOST_RANGE_SCALE = GAME_CONFIG.visual?.ghostRangeScale ?? 0.6; // alcance visual
-    const GHOST_BODY_SCALE = GAME_CONFIG.visual?.ghostBodyScale ?? 0.25; // corpo visual (muito menor)
+    const GHOST_RANGE_SCALE = GAME_CONFIG.visual?.ghostRangeScale ?? 0.6;
+    const GHOST_BODY_SCALE = GAME_CONFIG.visual?.ghostBodyScale ?? 0.25;
 
-    // config.range é raio -> lado do quadrado visual = 2 * raio
     const rangeSide = config.range * 1 * GHOST_RANGE_SCALE;
-    const ghostSize = config.size * GHOST_BODY_SCALE; // config.size = diâmetro esperado
+    const ghostSize = config.size * GHOST_BODY_SCALE;
     const halfGhost = ghostSize / 2;
 
-    // Desenha área de alcance (quadrado)
     ctx.save();
     ctx.globalAlpha = 1.0;
     ctx.fillStyle = color;
     ctx.fillRect(mx - rangeSide / 2, my - rangeSide / 2, rangeSide, rangeSide);
     ctx.restore();
 
-    // Desenha corpo da torre (quadrado pequeno)
     ctx.save();
     ctx.globalAlpha = 0.7;
     ctx.fillStyle = config.color || "#999";
@@ -675,71 +735,122 @@ export async function initEngine(canvas) {
   }
 
   // ==========================================================
-  // UPDATE E RENDER
+  // UPDATE E RENDER (CORRIGIDOS)
   // ==========================================================
-
-  let last = performance.now();
 
   function update(dt) {
     if (!state.running) return;
 
-    // 1. ATUALIZAÇÕES GERAIS E DE CLIMA
-    // Aplica efeitos e verifica se é hora de buscar um novo clima
+    // Verificar se precisa recalcular layout
+    if (state.needsRecalc) {
+      const newData = setupStableCanvas(canvas);
+      if (newData) {
+        state.cssW = newData.cssW;
+        state.cssH = newData.cssH;
+        state.dpr = newData.dpr;
+        ctx = newData.ctx;
+
+        state.waypoints = generateStableWaypoints(state.cssW, state.cssH);
+        state.pathPoints = buildSmoothPath(
+          state.waypoints,
+          PATH_SAMPLE_PER_SEG
+        );
+        state.pathObj = buildPathDistances(state.pathPoints);
+
+        const baseSize = Math.min(state.cssW, state.cssH) * 0.12;
+        state.base.centerX = state.waypoints[0].x;
+        state.base.centerY = state.waypoints[0].y;
+        state.base.width = baseSize;
+        state.base.height = baseSize;
+
+        state.decorations = generateDecorations();
+      }
+      state.needsRecalc = false;
+    }
+
+    // Atualizar clima e aplicar efeitos
     updateWeatherTimer(dt, state);
     applyWeatherEffects(state);
 
-    // 2. LÓGICA DE ATUALIZAÇÃO DAS ENTIDADES
-    // Gerencia o spawn de novos inimigos
-    state.waveManager.update(dt);
+    // Atualizar wave manager
+    waveManager.update(dt, state);
 
-    // Atualiza a posição e o estado de cada torre
-    state.towers.forEach((t) => t.update(dt, state.enemies));
-
-    // Atualiza a posição e o estado de cada inimigo
-    state.enemies.forEach((e) => e.update(dt));
-
-    // Atualiza a posição e o estado de cada projétil
-    state.projectiles.forEach((p) => p.update(dt, state.enemies));
-
-    // Atualiza efeitos visuais (explosões, etc.)
-    state.effects.forEach((e) => e.update(dt));
-
-    // 3. PROCESSAMENTO DE RESULTADOS E LIMPEZA
-    // Filtra os inimigos que foram mortos neste frame
-    const killedEnemies = state.enemies.filter((e) => e.dead);
-    if (killedEnemies.length > 0) {
-      killedEnemies.forEach((enemy) => {
-        state.gold += enemy.goldValue; // Dá o ouro ao jogador
-        state.waveManager.onEnemyDefeated(enemy);
-      });
+    // Atualizar torres
+    for (const t of state.towers) {
+      t.update(dt, state);
     }
 
-    // Remove inimigos mortos e efeitos inativos da lista principal
-    state.enemies = state.enemies.filter((e) => !e.dead);
-    state.effects = state.effects.filter((e) => e.active);
-
-    // Verifica se inimigos chegaram à base
-    state.enemies.forEach((en) => {
-      if (en.hasReachedBase) {
-        state.lives -= 1;
-        en.dead = true; // Marca o inimigo para ser removido no próximo frame
-        state.waveManager.onEnemyDefeated(en);
+    // Atualizar inimigos e capturar retornos
+    const reachedBaseEnemies = [];
+    for (const e of state.enemies) {
+      const result = e.update(dt);
+      if (result === "reached_base") {
+        reachedBaseEnemies.push(e);
       }
-    });
+    }
 
-    // Remove novamente caso algum inimigo tenha chegado à base
+    // Atualizar projéteis e efeitos
+    for (const p of state.projectiles) {
+      if (p && typeof p.update === "function") {
+        p.update(dt, state.enemies);
+      }
+    }
+    for (const ef of state.effects) {
+      if (ef && typeof ef.update === "function") {
+        ef.update(dt);
+      }
+    }
+
+    // Processar inimigos mortos (não processados ainda)
+    const killedEnemies = state.enemies.filter(
+      (e) => e.dead && !e._processedDead
+    );
+    if (killedEnemies.length > 0) {
+      for (const enemy of killedEnemies) {
+        state.gold += enemy.goldValue || 0;
+        waveManager.onEnemyDefeated(enemy);
+        enemy._processedDead = true;
+      }
+    }
+
+    // Processar inimigos que chegaram à base
+    for (const enemy of reachedBaseEnemies) {
+      state.lives -= 1;
+      enemy.dead = true;
+      waveManager.onEnemyDefeated(enemy);
+    }
+
+    // Filtrar listas
     state.enemies = state.enemies.filter((e) => !e.dead);
+    state.projectiles = state.projectiles.filter(
+      (p) => p && p.active !== false
+    );
+    state.effects = state.effects.filter((e) => e && e.active !== false);
 
-    // 4. VERIFICAÇÃO DE FIM DE JOGO
+    // Atualizar HUD
+    const goldEl = document.getElementById("gold");
+    const livesEl = document.getElementById("lives");
+    if (goldEl) goldEl.textContent = `Ouro: ${state.gold}`;
+    if (livesEl) livesEl.textContent = `Vidas: ${state.lives}`;
+
+    // Game Over
     if (state.lives <= 0) {
       state.running = false;
-      console.info("Game Over: Vidas zeradas.");
-      // Dispara evento de game over para a UI
+      console.info("Game Over");
+      window.dispatchEvent(
+        new CustomEvent("game:over", {
+          detail: {
+            reason: "no_lives",
+            finalScore: waveManager.calculateScore
+              ? waveManager.calculateScore(state)
+              : 0,
+          },
+        })
+      );
     }
   }
 
   function render(ctx) {
-    // Limpar e renderizar usando dimensões estáveis
     ctx.clearRect(0, 0, state.cssW, state.cssH);
     ctx.fillStyle = GAME_CONFIG.visual?.backgroundColor || "#0b1320";
     ctx.fillRect(0, 0, state.cssW, state.cssH);
@@ -749,16 +860,18 @@ export async function initEngine(canvas) {
     renderPath(ctx, state.pathPoints);
     renderBase(ctx, state.base);
 
-    // Desenhar torres
     for (const t of state.towers) t.draw(ctx);
-
-    // Desenhar fantasma da torre
     renderTowerGhost(ctx);
-
-    // Desenhar inimigos
     for (const e of state.enemies) e.draw(ctx);
 
-    // Overlay de pausa/game over
+    // Desenhar projéteis e efeitos se existirem
+    for (const p of state.projectiles) {
+      if (p && typeof p.draw === "function") p.draw(ctx);
+    }
+    for (const ef of state.effects) {
+      if (ef && typeof ef.draw === "function") ef.draw(ctx);
+    }
+
     if (!state.running) {
       ctx.save();
       ctx.fillStyle = "rgba(0,0,0,0.5)";
@@ -772,6 +885,10 @@ export async function initEngine(canvas) {
       ctx.fillText("PAUSADO / GAME OVER", state.cssW / 2, state.cssH / 2);
       ctx.restore();
     }
+  }
+
+  function draw() {
+    render(ctx);
   }
 
   // ==========================================================
@@ -816,113 +933,36 @@ export async function initEngine(canvas) {
   function handleResize() {
     clearTimeout(resizeTimeout);
     resizeTimeout = setTimeout(() => {
-      // Apenas marcar para recalculação no próximo frame
       state.needsRecalc = true;
-    }, 150); // Delay maior para estabilizar
+    }, 150);
   }
 
-  // Listener de resize mais seguro
   window.addEventListener("resize", handleResize);
 
-  // Cleanup
   window.addEventListener("beforeunload", () => {
     window.removeEventListener("resize", handleResize);
   });
 
-  /**
-   * Processa a resposta da API de clima e define o efeito ativo no estado do jogo.
-   */
-  function processWeather(weatherData, state) {
-    state.currentWeather = weatherData;
-    const code = weatherData.weathercode || 0;
-    const effects = GAME_CONFIG.weather.effects;
+  // ==========================================================
+  // GAME LOOP PRINCIPAL
+  // ==========================================================
 
-    // Encontra qual efeito corresponde ao código atual
-    let activeEffect = effects.clear; // Padrão
-    for (const key in effects) {
-      if (effects[key].codes.includes(code)) {
-        activeEffect = effects[key];
-        break;
-      }
-    }
-    state.activeWeatherEffect = activeEffect;
-
-    // Atualiza a UI
-    window.dispatchEvent(
-      new CustomEvent("weather:update", { detail: state.activeWeatherEffect })
-    );
-  }
-
-  /**
-   * Aplica os modificadores de clima às torres.
-   */
-  function applyWeatherEffects(state) {
-    if (
-      !state.activeWeatherEffect ||
-      state.activeWeatherEffect.modifiers.length === 0
-    ) {
-      return;
-    }
-
-    const modifiers = state.activeWeatherEffect.modifiers;
-
-    for (const tower of state.towers) {
-      // Reseta para valores base
-      tower.resetToBaseline();
-
-      // Aplica modificadores que afetam esta torre
-      for (const mod of modifiers) {
-        if (mod.category && tower.category === mod.category) {
-          tower[mod.property] *= mod.multiplier;
-        }
-      }
-    }
-  }
-
-  /**
-   * Atualiza o timer do clima e busca novos dados quando necessário.
-   */
-  function updateWeatherTimer(dt, state) {
-    state.weatherTimer += dt;
-    if (state.weatherTimer >= GAME_CONFIG.weather.updateInterval) {
-      state.weatherTimer = 0;
-      // Buscar clima em background (sem bloquear o jogo)
-      safeGetWeather(
-        GAME_CONFIG.weather.latitude,
-        GAME_CONFIG.weather.longitude
-      )
-        .then((response) => {
-          processWeather(response.data, state);
-          console.info("Clima atualizado:", state.activeWeatherEffect?.label);
-        })
-        .catch((err) => console.warn("Falha na atualização do clima:", err));
-    }
-  }
-  // js/engine.js
-
-  // js/engine.js
+  let last = performance.now();
 
   function gameLoop(now) {
     const dt = Math.min((now - last) / 1000, 1 / 30);
     last = now;
 
-    if (state.needsRecalc) {
-      recalcLayout();
-      state.needsRecalc = false;
-    }
-
-    // Chama a função update principal que agora contém toda a lógica
     update(dt);
-
     draw();
 
     if (state.running) {
-      requestAnimationFrame(gameLoop);
+      rafId = requestAnimationFrame(gameLoop);
     }
   }
 
   // Iniciar o loop
-  requestAnimationFrame(gameLoop);
+  rafId = requestAnimationFrame(gameLoop);
 
   return GameAPI;
 }

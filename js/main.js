@@ -23,29 +23,29 @@ function safeDestroy(api) {
 }
 
 // --- LÓGICA DO MODAL DE CONFIGURAÇÕES ---
+// js/main.js
+
+// --- LÓGICA DO MODAL DE CONFIGURAÇÕES ---
 function setupSettingsModal() {
   const openBtn = document.getElementById("btn-open-menu");
   const closeBtn = document.getElementById("btn-close-menu");
   const overlay = document.getElementById("settings-overlay");
+  const devModeToggle = document.getElementById("dev-mode-toggle"); // Novo elemento
 
-  if (!openBtn || !closeBtn || !overlay) return;
+  if (!openBtn || !closeBtn || !overlay || !devModeToggle) return;
 
-  // Função para abrir/fechar o modal (defensiva: controla display inline também)
   const toggleModal = (visible) => {
     overlay.classList.toggle("is-visible", visible);
-    // Caso um style inline exista por acidente, sobrescreve para garantir visibilidade
     overlay.style.display = visible ? "flex" : "none";
     overlay.setAttribute("aria-hidden", String(!visible));
     openBtn.setAttribute("aria-expanded", String(visible));
 
-    // Esconde/mostra ações de jogo dependendo da página atual
     const gameActions = document.getElementById("game-actions");
     const isGameView = location.hash === "#/game";
     if (gameActions) {
       gameActions.classList.toggle("hidden", !isGameView);
     }
 
-    // Atualiza o texto do botão de pause baseado no estado atual
     const pauseBtn = document.getElementById("btn-toggle-pause");
     if (pauseBtn && currentGameAPI) {
       const state = currentGameAPI.getState && currentGameAPI.getState();
@@ -53,7 +53,6 @@ function setupSettingsModal() {
       pauseBtn.textContent = isRunning ? "⏸️ Pausar" : "▶️ Continuar";
     }
 
-    // Gerenciar foco
     if (visible) {
       closeBtn.focus();
       document.addEventListener("keydown", handleKeydown);
@@ -63,7 +62,6 @@ function setupSettingsModal() {
     }
   };
 
-  // Tratamento de teclas
   function handleKeydown(e) {
     if (e.key === "Escape") {
       e.preventDefault();
@@ -71,24 +69,19 @@ function setupSettingsModal() {
     }
   }
 
-  // Event listeners principais
   openBtn.addEventListener("click", () => toggleModal(true));
   closeBtn.addEventListener("click", () => toggleModal(false));
-
-  // Fechar ao clicar fora do modal
   overlay.addEventListener("click", (e) => {
     if (e.target === overlay) {
       toggleModal(false);
     }
   });
 
-  // Ação do botão pause/resume
   const pauseBtn = document.getElementById("btn-toggle-pause");
   if (pauseBtn) {
     pauseBtn.addEventListener("click", () => {
       if (currentGameAPI && typeof currentGameAPI.togglePause === "function") {
         currentGameAPI.togglePause();
-        // Atualiza o botão imediatamente
         const state = currentGameAPI.getState && currentGameAPI.getState();
         const isRunning = state && state.running;
         pauseBtn.textContent = isRunning ? "⏸️ Pausar" : "▶️ Continuar";
@@ -96,7 +89,6 @@ function setupSettingsModal() {
     });
   }
 
-  // Ação do botão reiniciar
   const restartBtn = document.getElementById("btn-restart-game");
   if (restartBtn) {
     restartBtn.addEventListener("click", () => {
@@ -105,12 +97,10 @@ function setupSettingsModal() {
     });
   }
 
-  // Garantir que links de navegação fechem o modal
   overlay.querySelectorAll("a").forEach((link) => {
     link.addEventListener("click", () => toggleModal(false));
   });
 
-  // Atalho de teclado global para abrir configurações (M)
   document.addEventListener("keydown", (e) => {
     if (
       (e.key === "m" || e.key === "M") &&
@@ -120,7 +110,22 @@ function setupSettingsModal() {
       toggleModal(true);
     }
   });
+
+  // ==========================================================
+  // NOVA LÓGICA DO MODO DESENVOLVEDOR
+  // ==========================================================
+  const isDevMode = localStorage.getItem("developerMode") === "true";
+  devModeToggle.checked = isDevMode;
+
+  devModeToggle.addEventListener("change", () => {
+    localStorage.setItem("developerMode", devModeToggle.checked);
+    // Recarrega a página se estiver no jogo para aplicar a mudança
+    if (location.hash === "#/game") {
+      window.location.reload();
+    }
+  });
 }
+// --- FIM DA LÓGICA DO MODAL ---
 // --- FIM DA LÓGICA DO MODAL ---
 
 function showTemplateId(templateId) {
@@ -137,6 +142,28 @@ function showTemplateId(templateId) {
   }
   app.innerHTML = "";
   app.appendChild(template.content.cloneNode(true));
+}
+
+/**
+ * Configura o painel de depuração se o "Modo Desenvolvedor" estiver ativo.
+ * @param {object} api - A GameAPI retornada pelo initEngine.
+ */
+function setupDebugPanel(api) {
+  const isDevMode = localStorage.getItem("developerMode") === "true";
+  const debugPanel = document.getElementById("debug-panel");
+
+  if (isDevMode && debugPanel) {
+    debugPanel.classList.add("is-visible");
+
+    debugPanel.addEventListener("click", (event) => {
+      if (event.target.tagName === "BUTTON") {
+        const code = event.target.dataset.weathercode;
+        if (code && api && typeof api.forceWeather === "function") {
+          api.forceWeather(parseInt(code, 10));
+        }
+      }
+    });
+  }
 }
 
 async function renderRoute() {
@@ -171,6 +198,9 @@ async function renderRoute() {
 
         // link UI <-> engine
         if (window.__attachGameAPI) window.__attachGameAPI(api);
+
+        // Ativa o painel de debug após o jogo iniciar
+        setupDebugPanel(currentGameAPI);
       } catch (err) {
         console.error("Falha ao iniciar engine:", err);
       }
@@ -183,7 +213,7 @@ async function renderRoute() {
         const scores = await getScores();
         el.innerHTML =
           "<ol>" +
-          scores.map((s) => `<li>${s.player} — ${s.score}</li>`).join("") +
+          scores.data.map((s) => `<li>${s.player} — ${s.score}</li>`).join("") +
           "</ol>";
       } catch (err) {
         console.warn("Erro ao carregar scores:", err);
@@ -228,48 +258,6 @@ document.body.addEventListener("click", (e) => {
     }
   }
 });
-
-/**
- * Configura o painel de depuração se o parâmetro de URL for encontrado.
- * @param {object} api - A GameAPI retornada pelo initEngine.
- */
-function setupDebugPanel(api) {
-  const params = new URLSearchParams(window.location.search);
-  const debugPanel = document.getElementById("debug-panel");
-
-  if (params.get("debug") === "true" && debugPanel) {
-    debugPanel.classList.add("is-visible");
-
-    debugPanel.addEventListener("click", (event) => {
-      if (event.target.tagName === "BUTTON") {
-        const code = event.target.dataset.weathercode;
-        if (code && api && typeof api.forceWeather === "function") {
-          api.forceWeather(parseInt(code, 10));
-        }
-      }
-    });
-  }
-}
-
-
-async function renderRoute() {
-  // ... (código existente da função)
-
-  if (hash === "#/game") {
-    // ...
-    try {
-      showPage("page-game");
-      const canvas = document.getElementById("game-canvas");
-      currentGameAPI = await initEngine(canvas);
-      window.__attachGameAPI(currentGameAPI);
-
-      // ADICIONE ESTA LINHA AQUI
-      setupDebugPanel(currentGameAPI); // Ativa o painel de debug após o jogo iniciar
-
-    } catch (e) {
-      // ...
-    }
-  }
 
 // Escutar mudanças de hash
 window.addEventListener("hashchange", renderRoute);

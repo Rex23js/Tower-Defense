@@ -127,10 +127,10 @@ export function bindUI() {
               const stats = [];
 
               // Usamos ícones para melhorar a identificação e preencher mais o espaço
-              if (config.damage > 0) stats.push(`Dano: ${config.damage}`); // Mantido
+              if (config.damage > 0) stats.push(`Dano: ${config.damage}`);
               if (config.fireRate > 0)
-                stats.push(`Cadência: ${config.fireRate}/s`); // Novo ícone
-              if (config.range > 0) stats.push(`Alcance: ${config.range}`); // Novo ícone
+                stats.push(`Cadência: ${config.fireRate}/s`);
+              if (config.range > 0) stats.push(`Alcance: ${config.range}`);
 
               // Mapeia cada string de estatística para um elemento HTML <span>
               // e depois junta tudo em uma única string de HTML.
@@ -164,7 +164,8 @@ export function bindUI() {
 
     setupShopTabs();
     setupShopItems();
-    // ADICIONAR este listener no final da função:
+
+    // Listener para eventos de clima
     window.addEventListener("weather:update", (event) => {
       const weather = event.detail;
       if (!weather) return;
@@ -488,5 +489,4 @@ export function bindUI() {
   // Initial setup
   renderShop();
   setupGameControls();
-  // setupSettingsMenu foi removido pois agora está no main.js
 }

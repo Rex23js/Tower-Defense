@@ -283,9 +283,7 @@ export class Tower {
 
     if (killed) {
       this.enemiesKilled++;
-      if (gameState && typeof gameState.gold === "number") {
-        gameState.gold += target.goldValue || 0;
-      }
+      // Não soma ouro aqui, já é feito no engine
     }
 
     // efeito visual opcional
