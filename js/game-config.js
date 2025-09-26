@@ -279,20 +279,25 @@ export const GAME_CONFIG = {
   ],
 
   visual: {
-    // fundo do jogo (CSS pixels)
-    backgroundColor: "#0b1320",
-    // cores e larguras do caminho
-    pathColor: "#1a1a1a",
-    pathBorderColor: "#ffffff",
+    // fundo do jogo - tom terroso/grama
+    backgroundColor: "#2d5016",
+    // estrada de terra
+    pathColor: "#8b4513",
+    pathBorderColor: "#654321",
     pathWidth: 48,
-    pathBorderWidth: 3,
+    pathBorderWidth: 4,
     pathRadiusBlock: 32,
-    // central dash
-    pathCenterDash: [8, 8],
-    pathCenterColor: "rgba(255,255,255,0.15)",
-    // base
-    baseColor: "#111827",
-    baseStripeColor: "#f3f4f6",
+    // marcações centrais da estrada
+    pathCenterDash: [12, 8],
+    pathCenterColor: "rgba(139, 69, 19, 0.4)",
+    // castelo
+    baseColor: "#696969",
+    baseStripeColor: "#a0a0a0",
+    // detalhes do castelo
+    castleWallColor: "#708090",
+    castleTowerColor: "#2f4f4f",
+    castleRoofColor: "#8b0000",
+    castleDoorColor: "#654321",
     // ghost tower visualization
     ghostRangeScale: 0.6,
     ghostBodyScale: 0.25,

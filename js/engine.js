@@ -801,22 +801,24 @@ export async function initEngine(canvas) {
 
   function generateDecorations() {
     const decs = [];
-    const density = Math.floor((state.cssW * state.cssH) / 12000);
-    const tries = Math.max(30, Math.min(150, density));
+    const density = Math.floor((state.cssW * state.cssH) / 15000);
+    const tries = Math.max(20, Math.min(80, density)); // Menos decorações, mas maiores
 
     for (let i = 0; i < tries; i++) {
-      const margin = Math.min(state.cssW, state.cssH) * 0.05;
+      const margin = Math.min(state.cssW, state.cssH) * 0.08;
       const px = margin + Math.random() * (state.cssW - margin * 2);
       const py = margin + Math.random() * (state.cssH - margin * 2);
       const d = distanceToPath({ x: px, y: py }, state.pathPoints);
 
-      if (d > PATH_RADIUS_BLOCK + 25) {
-        const r = 4 + Math.random() * Math.min(state.cssW, state.cssH) * 0.025;
+      if (d > PATH_RADIUS_BLOCK + 35) {
+        // Árvores muito maiores
+        const r = 15 + Math.random() * Math.min(state.cssW, state.cssH) * 0.08;
         decs.push({
           x: px,
           y: py,
           r,
-          type: Math.random() > 0.85 ? "cactus" : "rock",
+          type: "tree", // Só árvores, sem pedras
+          treeType: Math.random() > 0.5 ? "oak" : "pine", // Dois tipos de árvore
         });
       }
     }
@@ -1112,21 +1114,47 @@ export async function initEngine(canvas) {
   function renderDecorations(ctx) {
     for (const d of state.decorations) {
       ctx.save();
-      ctx.globalAlpha = 0.12;
 
       if (d.type === "rock") {
-        ctx.fillStyle = "#ffffff";
+        // Pedras com leve transparência e sombra
+        ctx.globalAlpha = 0.3;
+        ctx.fillStyle = "#696969";
         ctx.beginPath();
-        ctx.ellipse(d.x, d.y, d.r, d.r * 0.7, 0, 0, Math.PI * 2);
+        ctx.ellipse(d.x, d.y, d.r, d.r * 0.8, 0, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Sombra da pedra
+        ctx.globalAlpha = 0.12;
+        ctx.fillStyle = "#000000";
+        ctx.beginPath();
+        ctx.ellipse(d.x + 2, d.y + 2, d.r, d.r * 0.8, 0, 0, Math.PI * 2);
         ctx.fill();
       } else {
-        ctx.fillStyle = "#ffffff";
-        const w = d.r * 0.4;
-        const h = d.r * 1.2;
-        ctx.fillRect(d.x - w / 2, d.y - h / 2, w, h);
-        ctx.fillRect(d.x - d.r * 0.8, d.y - w / 2, w * 0.7, w);
-        ctx.fillRect(d.x + d.r * 0.1, d.y - w / 2, w * 0.7, w);
+        // ÁRVORES OPACAS (sem afetar por globalAlpha geral)
+        ctx.globalAlpha = 1.0; // <-- aqui: árvores totalmente opacas
+
+        // Parâmetros de copa/tronco
+        const w = d.r * 0.6;
+        const h = d.r * 1.4;
+
+        // Tronco (opaco)
+        ctx.fillStyle = "#8b4513";
+        ctx.fillRect(d.x - w / 6, d.y - h / 4, w / 3, h / 2);
+
+        // Copa da árvore (opaca)
+        ctx.fillStyle = "#228b22";
+        ctx.beginPath();
+        ctx.arc(d.x, d.y - h / 3, w / 2, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Sombra discreta (separada, com alpha baixo)
+        ctx.globalAlpha = 0.08;
+        ctx.fillStyle = "#000000";
+        ctx.beginPath();
+        ctx.arc(d.x + 3, d.y + 3, w / 2, 0, Math.PI * 2);
+        ctx.fill();
       }
+
       ctx.restore();
     }
   }
@@ -1138,10 +1166,11 @@ export async function initEngine(canvas) {
       30,
       Math.min(60, Math.min(state.cssW, state.cssH) / 15)
     );
-    const borderWidth = Math.max(2, pathWidth * 0.08);
+    const borderWidth = Math.max(3, pathWidth * 0.12);
 
     ctx.save();
 
+    // Estrada principal de terra
     ctx.beginPath();
     ctx.moveTo(pathPoints[0].x, pathPoints[0].y);
     for (let i = 1; i < pathPoints.length; i++) {
@@ -1149,11 +1178,12 @@ export async function initEngine(canvas) {
     }
 
     ctx.lineWidth = pathWidth;
-    ctx.strokeStyle = GAME_CONFIG.visual?.pathColor || "#1a1a1a";
+    ctx.strokeStyle = GAME_CONFIG.visual?.pathColor || "#8b4513";
     ctx.lineCap = "round";
     ctx.lineJoin = "round";
     ctx.stroke();
 
+    // Bordas da estrada (grama/terra mais escura)
     ctx.beginPath();
     ctx.moveTo(pathPoints[0].x, pathPoints[0].y);
     for (let i = 1; i < pathPoints.length; i++) {
@@ -1161,21 +1191,51 @@ export async function initEngine(canvas) {
     }
 
     ctx.lineWidth = pathWidth + borderWidth * 2;
-    ctx.strokeStyle = "#ffffff";
+    ctx.strokeStyle = GAME_CONFIG.visual?.pathBorderColor || "#654321";
     ctx.globalCompositeOperation = "destination-over";
     ctx.stroke();
     ctx.globalCompositeOperation = "source-over";
+
+    // Trilhas de roda na estrada
+    for (let offset of [-pathWidth / 6, pathWidth / 6]) {
+      ctx.beginPath();
+      for (let i = 0; i < pathPoints.length; i++) {
+        const point = pathPoints[i];
+        let perpX = 0,
+          perpY = 0;
+
+        if (i < pathPoints.length - 1) {
+          const next = pathPoints[i + 1];
+          const dx = next.x - point.x;
+          const dy = next.y - point.y;
+          const len = Math.sqrt(dx * dx + dy * dy);
+          if (len > 0) {
+            perpX = (-dy / len) * offset;
+            perpY = (dx / len) * offset;
+          }
+        }
+
+        if (i === 0) ctx.moveTo(point.x + perpX, point.y + perpY);
+        else ctx.lineTo(point.x + perpX, point.y + perpY);
+      }
+
+      ctx.lineWidth = 2;
+      ctx.strokeStyle = "rgba(101, 67, 33, 0.6)";
+      ctx.stroke();
+    }
+
+    // Linha central pontilhada mais sutil
+    const dashSize = Math.max(6, pathWidth / 10);
+    ctx.setLineDash([dashSize, dashSize * 1.5]);
+    ctx.lineWidth = Math.max(1, pathWidth / 25);
+    ctx.strokeStyle =
+      GAME_CONFIG.visual?.pathCenterColor || "rgba(139, 69, 19, 0.4)";
 
     ctx.beginPath();
     ctx.moveTo(pathPoints[0].x, pathPoints[0].y);
     for (let i = 1; i < pathPoints.length; i++) {
       ctx.lineTo(pathPoints[i].x, pathPoints[i].y);
     }
-
-    const dashSize = Math.max(4, pathWidth / 8);
-    ctx.setLineDash([dashSize, dashSize]);
-    ctx.lineWidth = Math.max(1, pathWidth / 20);
-    ctx.strokeStyle = "rgba(255,255,255,0.2)";
     ctx.stroke();
     ctx.setLineDash([]);
 
@@ -1185,34 +1245,159 @@ export async function initEngine(canvas) {
   function renderBase(ctx, base) {
     const left = base.centerX - base.width / 2;
     const top = base.centerY - base.height / 2;
-    const crossSize = base.width * 0.3;
+    const centerX = base.centerX;
+    const centerY = base.centerY;
+    const size = base.width;
 
     ctx.save();
 
-    ctx.fillStyle = "#2a2a2a";
-    ctx.fillRect(left, top, base.width, base.height);
+    // Base do castelo (muralha principal)
+    ctx.fillStyle = GAME_CONFIG.visual?.castleWallColor || "#708090";
+    ctx.fillRect(left, top + size * 0.2, size, size * 0.6);
 
-    ctx.strokeStyle = "#ffffff";
-    ctx.lineWidth = Math.max(2, base.width / 30);
-    ctx.strokeRect(left, top, base.width, base.height);
+    // Torres laterais
+    const towerWidth = size * 0.25;
+    const towerHeight = size * 0.8;
 
-    ctx.fillStyle = "#ffffff";
+    // Torre esquerda
+    ctx.fillStyle = GAME_CONFIG.visual?.castleTowerColor || "#2f4f4f";
+    ctx.fillRect(left - towerWidth * 0.3, top, towerWidth, towerHeight);
+
+    // Torre direita
+    ctx.fillRect(left + size - towerWidth * 0.7, top, towerWidth, towerHeight);
+
+    // Torre central (mais alta)
+    const centralTowerWidth = size * 0.3;
     ctx.fillRect(
-      base.centerX - crossSize / 2,
-      base.centerY - crossSize / 6,
-      crossSize,
-      crossSize / 3
+      centerX - centralTowerWidth / 2,
+      top - size * 0.1,
+      centralTowerWidth,
+      towerHeight + size * 0.1
+    );
+
+    // Telhados das torres (formato triangular)
+    ctx.fillStyle = GAME_CONFIG.visual?.castleRoofColor || "#8b0000";
+
+    // Telhado torre esquerda
+    ctx.beginPath();
+    ctx.moveTo(left - towerWidth * 0.3, top);
+    ctx.lineTo(left - towerWidth * 0.3 + towerWidth, top);
+    ctx.lineTo(left - towerWidth * 0.3 + towerWidth / 2, top - size * 0.15);
+    ctx.closePath();
+    ctx.fill();
+
+    // Telhado torre direita
+    ctx.beginPath();
+    ctx.moveTo(left + size - towerWidth * 0.7, top);
+    ctx.lineTo(left + size - towerWidth * 0.7 + towerWidth, top);
+    ctx.lineTo(
+      left + size - towerWidth * 0.7 + towerWidth / 2,
+      top - size * 0.15
+    );
+    ctx.closePath();
+    ctx.fill();
+
+    // Telhado torre central
+    ctx.beginPath();
+    ctx.moveTo(centerX - centralTowerWidth / 2, top - size * 0.1);
+    ctx.lineTo(centerX + centralTowerWidth / 2, top - size * 0.1);
+    ctx.lineTo(centerX, top - size * 0.25);
+    ctx.closePath();
+    ctx.fill();
+
+    // Portão principal
+    ctx.fillStyle = GAME_CONFIG.visual?.castleDoorColor || "#654321";
+    const doorWidth = size * 0.15;
+    const doorHeight = size * 0.25;
+    ctx.fillRect(
+      centerX - doorWidth / 2,
+      top + size * 0.55,
+      doorWidth,
+      doorHeight
+    );
+
+    // Janelas nas torres
+    ctx.fillStyle = "#000000";
+    const windowSize = size * 0.05;
+
+    // Janelas torre esquerda
+    ctx.fillRect(
+      left - towerWidth * 0.3 + towerWidth / 2 - windowSize / 2,
+      top + towerHeight * 0.3,
+      windowSize,
+      windowSize
     );
     ctx.fillRect(
-      base.centerX - crossSize / 6,
-      base.centerY - crossSize / 2,
-      crossSize / 3,
-      crossSize
+      left - towerWidth * 0.3 + towerWidth / 2 - windowSize / 2,
+      top + towerHeight * 0.6,
+      windowSize,
+      windowSize
+    );
+
+    // Janelas torre direita
+    ctx.fillRect(
+      left + size - towerWidth * 0.7 + towerWidth / 2 - windowSize / 2,
+      top + towerHeight * 0.3,
+      windowSize,
+      windowSize
+    );
+    ctx.fillRect(
+      left + size - towerWidth * 0.7 + towerWidth / 2 - windowSize / 2,
+      top + towerHeight * 0.6,
+      windowSize,
+      windowSize
+    );
+
+    // Janela torre central
+    ctx.fillRect(
+      centerX - windowSize / 2,
+      top + towerHeight * 0.2,
+      windowSize,
+      windowSize
+    );
+
+    // Bandeira no topo da torre central
+    ctx.fillStyle = "#ff0000";
+    ctx.fillRect(
+      centerX + size * 0.02,
+      top - size * 0.25,
+      size * 0.08,
+      size * 0.06
+    );
+
+    // Mastro da bandeira
+    ctx.strokeStyle = "#654321";
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(centerX, top - size * 0.25);
+    ctx.lineTo(centerX, top - size * 0.35);
+    ctx.stroke();
+
+    // Contornos para dar profundidade
+    ctx.strokeStyle = "#000000";
+    ctx.lineWidth = 1;
+    ctx.globalAlpha = 0.3;
+
+    // Contorno muralha principal
+    ctx.strokeRect(left, top + size * 0.2, size, size * 0.6);
+
+    // Contornos das torres
+    ctx.strokeRect(left - towerWidth * 0.3, top, towerWidth, towerHeight);
+    ctx.strokeRect(
+      left + size - towerWidth * 0.7,
+      top,
+      towerWidth,
+      towerHeight
+    );
+    ctx.strokeRect(
+      centerX - centralTowerWidth / 2,
+      top - size * 0.1,
+      centralTowerWidth,
+      towerHeight + size * 0.1
     );
 
     ctx.restore();
   }
-
   function renderTowerGhost(ctx) {
     if (!state.selectedTowerType) return;
 
@@ -1423,14 +1608,26 @@ export async function initEngine(canvas) {
 
   function render(ctx) {
     ctx.clearRect(0, 0, state.cssW, state.cssH);
-    ctx.fillStyle = GAME_CONFIG.visual?.backgroundColor || "#0b1320";
+
+    // Fundo base (grama)
+    ctx.fillStyle = GAME_CONFIG.visual?.backgroundColor || "#2d5016";
     ctx.fillRect(0, 0, state.cssW, state.cssH);
+
+    // Textura de grama sutil
+    ctx.save();
+    ctx.globalAlpha = 0.1;
+    for (let i = 0; i < 50; i++) {
+      ctx.fillStyle = "#228b22";
+      const x = Math.random() * state.cssW;
+      const y = Math.random() * state.cssH;
+      ctx.fillRect(x, y, 2, 8);
+    }
+    ctx.restore();
 
     drawGrid(ctx);
     renderDecorations(ctx);
     renderPath(ctx, state.pathPoints);
     renderBase(ctx, state.base);
-
     for (const t of state.towers) t.draw(ctx);
     // Desenhar efeitos de clima nas torres
     for (const tower of state.towers) {
