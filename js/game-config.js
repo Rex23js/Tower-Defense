@@ -112,7 +112,18 @@ export const GAME_CONFIG = {
       color: "#f97316",
       name: "Sniper",
       description: "Dano alto e longo alcance, ótimo contra tanques.",
-      category: "basic",
+      category: "advanced",
+    },
+    magic: {
+      cost: 100,
+      range: 140,
+      fireRate: 1,
+      damage: 8,
+      size: 20,
+      color: "#a78bfa",
+      name: "Magic",
+      description: "Dano alto e longo alcance, ótimo contra tanques.",
+      category: "advanced",
     },
   },
 
@@ -163,9 +174,9 @@ export const GAME_CONFIG = {
         icon: "⛈️",
         modifiers: [
           // Efeito 1: Reduz alcance das torres básicas
-          { category: "basic", property: "range", multiplier: 0.8 },
-          // Efeito 2: Reduz a velocidade de tiro das snipers
-          { category: "sniper", property: "fireRate", multiplier: 0.85 },
+          { category: "basic", property: "fireRate", multiplier: 0.8 },
+          // Efeito 2: Reduz a velocidade de tiro das torres avançadas
+          { category: "advanced", property: "fireRate", multiplier: 0.85 },
         ],
       },
     },

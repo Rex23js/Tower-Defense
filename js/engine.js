@@ -267,15 +267,35 @@ class WeatherOverlay {
 
     ctx.save();
 
-    // Efeito de escurecimento para tempestades
+    // Escurecimento mais forte para tempestades (sutileza controlada pela intensidade)
     if (this.currentWeatherType === "storm" && this.intensity > 0.5) {
-      ctx.fillStyle = `rgba(0, 0, 0, ${0.1 * this.intensity})`;
+      ctx.fillStyle = `rgba(0, 0, 0, ${0.15 * this.intensity})`;
+      ctx.fillRect(0, 0, this.canvasWidth, this.canvasHeight);
+    }
+
+    // Tint leve para chuva/neblina (ajuda legibilidade e mood)
+    if (this.currentWeatherType === "rain") {
+      ctx.fillStyle = `rgba(40,70,120, ${0.03 * this.intensity})`;
+      ctx.fillRect(0, 0, this.canvasWidth, this.canvasHeight);
+    } else if (this.currentWeatherType === "fog") {
+      ctx.fillStyle = `rgba(200,200,200, ${0.06 * this.intensity})`;
       ctx.fillRect(0, 0, this.canvasWidth, this.canvasHeight);
     }
 
     // Desenhar partículas
     for (const particle of this.particles) {
       particle.draw(ctx);
+    }
+
+    // Flash aleatório de relâmpago em storms (pequeno brilho, impacto visual)
+    if (
+      this.currentWeatherType === "storm" &&
+      Math.random() < 0.004 * Math.max(0.001, this.intensity)
+    ) {
+      ctx.fillStyle = `rgba(255,255,255, ${0.45 * this.intensity})`;
+      ctx.fillRect(0, 0, this.canvasWidth, this.canvasHeight);
+      // opção: evento para som/efeito
+      window.dispatchEvent(new CustomEvent("weather:lightning"));
     }
 
     ctx.restore();
@@ -593,6 +613,12 @@ function generateStableWaypoints(cssW, cssH) {
 /**
  * Processa a resposta da API de clima e define o efeito ativo no estado do jogo.
  */
+// ---------- SUBSTITUIR processWeather e applyWeatherEffects ----------
+
+/**
+ * Quando o clima muda, aplica/remova debuffs de forma controlada.
+ * Mantemos um label em state.lastWeatherLabel para evitar reaplicações.
+ */
 function processWeather(weatherData, state) {
   state.currentWeather = weatherData;
   const code = weatherData?.weathercode || 0;
@@ -611,13 +637,16 @@ function processWeather(weatherData, state) {
       break;
     }
   }
-  state.activeWeatherEffect = activeEffect;
 
-  // NOVO: Atualizar overlay visual
+  // Se o efeito mudou, a gente sincroniza debuffs nas torres
+  const prevLabel = state.lastWeatherLabel;
+  state.activeWeatherEffect = activeEffect;
+  state.lastWeatherLabel = activeEffect.label;
+
+  // Atualiza overlay visual (mesma lógica de antes)
   if (weatherOverlay) {
     let weatherType = "clear";
     let intensity = 0;
-
     switch (activeEffect.label) {
       case "Chuva":
         weatherType = "rain";
@@ -632,11 +661,15 @@ function processWeather(weatherData, state) {
         intensity = 1.0;
         break;
     }
-
     weatherOverlay.setWeather(weatherType, intensity);
   }
 
-  // NOVO: Atualizar debug info
+  // Só reagimos se o clima realmente mudou (evita re-aplicar multiplicações toda frame)
+  if (prevLabel !== activeEffect.label) {
+    // remover debuffs de clima anteriores e aplicar novos
+    applyWeatherEffectsOnChange(state, activeEffect);
+  }
+
   updateDebugWeatherInfo(state.activeWeatherEffect);
 
   window.dispatchEvent(
@@ -647,31 +680,52 @@ function processWeather(weatherData, state) {
 /**
  * Aplica os modificadores de clima às torres.
  */
-function applyWeatherEffects(state) {
-  if (
-    !state.activeWeatherEffect ||
-    !state.activeWeatherEffect.modifiers ||
-    state.activeWeatherEffect.modifiers.length === 0
-  ) {
-    return;
+/**
+ * Aplica / remove debuffs quando o clima muda (chamado apenas no evento de mudança).
+ * Cada modifier do GAME_CONFIG.weather.effects deve ser:
+ *  { category: "support", property: "range", multiplier: 0.75, duration: null }
+ * duration: se null -> efeito enquanto o clima durar; se número -> tempo em segundos
+ */
+function applyWeatherEffectsOnChange(state, activeEffect) {
+  const idPrefix = "weather-";
+
+  // Remover debuffs de clima antigos
+  for (const tower of state.towers) {
+    if (Array.isArray(tower.debuffs)) {
+      tower.debuffs = tower.debuffs.filter((d) => !d.id?.startsWith(idPrefix));
+    }
+    // resetar stats para baseline antes de aplicar novos efeitos
+    if (typeof tower.resetToBaseline === "function") tower.resetToBaseline();
   }
 
-  const modifiers = state.activeWeatherEffect.modifiers;
+  if (!activeEffect || !Array.isArray(activeEffect.modifiers)) return;
 
+  // Aplicar novos debuffs conforme modifiers
+  for (const mod of activeEffect.modifiers) {
+    const debuffId = `${idPrefix}${activeEffect.label}:${mod.property}`;
+    // para cada torre da categoria aplicamos um debuff
+    for (const tower of state.towers) {
+      if (mod.category && tower.category !== mod.category) continue;
+
+      // construir debuff (duration null -> live enquanto clima ativo)
+      const deb = {
+        id: debuffId,
+        property: mod.property,
+        multiplier: mod.multiplier,
+        remaining: typeof mod.duration === "number" ? mod.duration : null,
+        source: activeEffect.label,
+        label: activeEffect.label,
+      };
+
+      tower.debuffs = tower.debuffs || [];
+      tower.debuffs.push(deb);
+    }
+  }
+
+  // recalcular stats imediatamente
   for (const tower of state.towers) {
-    if (typeof tower.resetToBaseline === "function") {
-      tower.resetToBaseline();
-    }
-
-    for (const mod of modifiers) {
-      if (
-        mod.category &&
-        tower.category === mod.category &&
-        tower[mod.property]
-      ) {
-        tower[mod.property] *= mod.multiplier;
-      }
-    }
+    if (typeof tower.computeEffectiveStats === "function")
+      tower.computeEffectiveStats();
   }
 }
 
@@ -1252,8 +1306,8 @@ export async function initEngine(canvas) {
     }
 
     // Atualizar clima e aplicar efeitos (sem desenhar aqui)
+    // Atualizar clima (fetch somente quando necessário). Debuffs são sincronizados apenas na mudança.
     updateWeatherTimer(dt, state);
-    applyWeatherEffects(state);
 
     // Atualizar overlay (apenas atualização de física/partículas, sem draw)
     if (weatherOverlay) {

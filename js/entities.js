@@ -3,6 +3,182 @@
 
 import { GAME_CONFIG } from "./game-config.js";
 
+/** Desenha um raio zig-zag */
+function drawLightningIcon(ctx, cx, cy, size, color) {
+  ctx.save();
+  ctx.strokeStyle = color;
+  ctx.lineWidth = Math.max(1, size * 0.18);
+  ctx.beginPath();
+  const s = size;
+  ctx.moveTo(cx - s * 0.5, cy + s * 0.4);
+  ctx.lineTo(cx - s * 0.15, cy - s * 0.15);
+  ctx.lineTo(cx + s * 0.05, cy + s * 0.05);
+  ctx.lineTo(cx + s * 0.5, cy - s * 0.4);
+  ctx.stroke();
+
+  // brilho sutil
+  ctx.globalCompositeOperation = "lighter";
+  ctx.strokeStyle = "rgba(255,255,230,0.25)";
+  ctx.lineWidth = Math.max(0.6, size * 0.07);
+  ctx.beginPath();
+  ctx.moveTo(cx - s * 0.5, cy + s * 0.4);
+  ctx.lineTo(cx - s * 0.15, cy - s * 0.15);
+  ctx.lineTo(cx + s * 0.05, cy + s * 0.05);
+  ctx.lineTo(cx + s * 0.5, cy - s * 0.4);
+  ctx.stroke();
+  ctx.restore();
+}
+
+/** Desenha um escudo rachado (para redução de dano) */
+function drawCrackedShield(ctx, cx, cy, size, color) {
+  ctx.save();
+  const r = size * 0.45;
+  ctx.beginPath();
+  ctx.fillStyle = color;
+  ctx.arc(cx, cy, r, Math.PI, 0);
+  ctx.lineTo(cx + r * 0.8, cy + r * 0.9);
+  ctx.lineTo(cx - r * 0.8, cy + r * 0.9);
+  ctx.closePath();
+  ctx.fill();
+
+  ctx.strokeStyle = "rgba(0,0,0,0.25)";
+  ctx.lineWidth = 1;
+  ctx.stroke();
+
+  // rachadura
+  ctx.beginPath();
+  ctx.strokeStyle = "rgba(255,255,255,0.85)";
+  ctx.lineWidth = 1.2;
+  ctx.moveTo(cx - r * 0.15, cy - r * 0.1);
+  ctx.lineTo(cx + r * 0.02, cy + r * 0.15);
+  ctx.lineTo(cx - r * 0.02, cy + r * 0.05);
+  ctx.stroke();
+  ctx.restore();
+}
+
+/** Desenha uma gota (para chuva) */
+function drawDropIcon(ctx, cx, cy, size, color) {
+  ctx.save();
+  ctx.fillStyle = color;
+  const s = size * 0.6;
+  ctx.beginPath();
+  ctx.moveTo(cx, cy - s * 0.6);
+  ctx.bezierCurveTo(
+    cx + s * 0.35,
+    cy - s * 0.15,
+    cx + s * 0.12,
+    cy + s * 0.6,
+    cx,
+    cy + s * 0.6
+  );
+  ctx.bezierCurveTo(
+    cx - s * 0.12,
+    cy + s * 0.6,
+    cx - s * 0.35,
+    cy - s * 0.15,
+    cx,
+    cy - s * 0.6
+  );
+  ctx.fill();
+  ctx.restore();
+}
+
+/** Desenha anéis comparativos (baseline tracejado + atual sólido) */
+function drawRangeRings(ctx, tower) {
+  const baseR = (tower.baseline && tower.baseline.range) || tower.range;
+  const curR = tower.range || baseR;
+  ctx.save();
+
+  // base (tracejada, fraca)
+  ctx.beginPath();
+  ctx.setLineDash([6, 6]);
+  ctx.lineWidth = 1.2;
+  ctx.strokeStyle = "rgba(255,255,255,0.12)";
+  ctx.arc(tower.x, tower.y, baseR, 0, Math.PI * 2);
+  ctx.stroke();
+  ctx.setLineDash([]);
+
+  // atual (visível)
+  ctx.beginPath();
+  ctx.lineWidth = 2;
+  ctx.strokeStyle = "rgba(249,115,22,0.95)"; // laranja
+  ctx.arc(tower.x, tower.y, curR, 0, Math.PI * 2);
+  ctx.stroke();
+
+  // indicador de perda percentual (se reduziu)
+  if (baseR > curR) {
+    const pct = Math.round(((baseR - curR) / baseR) * 100);
+    ctx.font = "11px Inter, Arial";
+    ctx.fillStyle = "rgba(255,255,255,0.9)";
+    ctx.textAlign = "center";
+    ctx.fillText(`-${pct}%`, tower.x, tower.y - curR - 10);
+  }
+
+  ctx.restore();
+}
+
+/** Desenha todos os debuffs da torre (ícones + barras de duração) */
+function drawDebuffsForTower(ctx, tower) {
+  if (!Array.isArray(tower.debuffs) || tower.debuffs.length === 0) return;
+
+  const iconsize = Math.max(8, Math.min(14, tower.size * 0.35));
+  const baseY = tower.y - tower.size / 2 - 14;
+  const spacing = iconsize + 6;
+  const count = tower.debuffs.length;
+
+  for (let i = 0; i < count; i++) {
+    const d = tower.debuffs[i];
+    const cx = tower.x - ((count - 1) * spacing) / 2 + i * spacing;
+    const cy = baseY;
+
+    // escolha de cor por propriedade
+    const colorMap = {
+      range: "#60a5fa",
+      fireRate: "#facc15",
+      damage: "#ef4444",
+    };
+    const col = colorMap[d.property] || "#999";
+
+    ctx.save();
+    // se for debuff de range, mostra anéis ao redor da torre
+    if (d.property === "range") {
+      drawRangeRings(ctx, tower);
+      // e desenha um pequeno ícone de indicação
+      ctx.beginPath();
+      ctx.fillStyle = col;
+      ctx.arc(cx, cy, iconsize * 0.6, 0, Math.PI * 2);
+      ctx.fill();
+    } else if (d.property === "fireRate") {
+      drawLightningIcon(ctx, cx, cy, iconsize * 2.0, col);
+    } else if (d.property === "damage") {
+      drawCrackedShield(ctx, cx, cy, iconsize * 2.0, col);
+    } else if (d.property === "accuracy" || d.property === "slow") {
+      drawDropIcon(ctx, cx, cy, iconsize * 1.6, col);
+    } else {
+      // fallback: pequeno círculo
+      ctx.beginPath();
+      ctx.fillStyle = col;
+      ctx.arc(cx, cy, iconsize * 0.7, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    // barra de duração (se aplicável)
+    if (typeof d.remaining === "number") {
+      // inicial: guarde d._initial quando criado (recomendado)
+      const initial = typeof d._initial === "number" ? d._initial : d.remaining;
+      const pct =
+        initial > 0 ? Math.max(0, Math.min(1, d.remaining / initial)) : 0;
+      ctx.fillStyle = "rgba(255,255,255,0.85)";
+      ctx.fillRect(cx - iconsize, cy + 8, iconsize * 2 * pct, 2);
+      ctx.strokeStyle = "rgba(0,0,0,0.25)";
+      ctx.lineWidth = 0.6;
+      ctx.strokeRect(cx - iconsize, cy + 8, iconsize * 2, 2);
+    }
+
+    ctx.restore();
+  }
+}
+
 /**
  * Classe base para inimigos
  */
@@ -159,81 +335,134 @@ export class Tower {
     const cfg = GAME_CONFIG.towerTypes[type] || {};
     this.cfg = cfg;
 
-    // Normalizar valores vindos de config (usar defaults seguros)
-    this.size = typeof cfg.size === "number" ? cfg.size : 20; // diâmetro (px) - valor padrão menor
-    this.range = typeof cfg.range === "number" ? cfg.range : 80; // raio (px)
+    // Normalizar valores vindos de config (usar defaults)
+    this.size = typeof cfg.size === "number" ? cfg.size : 20;
+    this.range = typeof cfg.range === "number" ? cfg.range : 80;
     this.damage = typeof cfg.damage === "number" ? cfg.damage : cfg.damage ?? 4;
     this.fireRate =
-      typeof cfg.fireRate === "number" ? cfg.fireRate : cfg.fireRate ?? 1; // tiros por segundo
+      typeof cfg.fireRate === "number" ? cfg.fireRate : cfg.fireRate ?? 1;
     this.color = cfg.color || "#33c";
     this.cost = cfg.cost || 0;
 
     // Estado dinâmico
-    this.cooldown = 0; // tempo até próximo tiro (s)
+    this.cooldown = 0;
     this.target = null;
     this.totalDamageDealt = 0;
     this.enemiesKilled = 0;
 
-    // Retarget: evitar recalcular alvo toda frame
+    // Retarget
     this.retargetTimer = 0;
     this.retargetInterval =
       typeof cfg.retargetInterval === "number" ? cfg.retargetInterval : 0.25;
     this.category = cfg.category || "basic";
-    // Armazena os valores base para poder resetá-los
+
+    // Baseline (valores puros para reset)
     this.baseline = {
       damage: this.damage,
       range: this.range,
       fireRate: this.fireRate,
     };
+
+    // Sistema de debuffs
+    // debuffs: array de { id, property, multiplier, remaining|null, _initial|null, source, label }
+    this.debuffs = [];
+    this._effectCache = null;
   }
 
+  // reseta para baseline (antes de reaplicar debuffs)
   resetToBaseline() {
     this.damage = this.baseline.damage;
     this.range = this.baseline.range;
     this.fireRate = this.baseline.fireRate;
   }
 
+  // recalcula stats baseando-se nos debuffs atuais
+  computeEffectiveStats() {
+    this.resetToBaseline();
+
+    if (Array.isArray(this.debuffs) && this.debuffs.length) {
+      for (const d of this.debuffs) {
+        if (!d || !d.property || typeof d.multiplier !== "number") continue;
+        if (d.property in this) {
+          this[d.property] = this[d.property] * d.multiplier;
+        }
+      }
+    }
+
+    // evite fireRate zero/negativo
+    if (!this.fireRate || this.fireRate <= 0) this.fireRate = 0.001;
+  }
+
+  addDebuff(deb) {
+    if (!deb || !deb.id) return;
+    this.debuffs = this.debuffs || [];
+    const exists = this.debuffs.find((d) => d.id === deb.id);
+    if (exists) {
+      // renovar duração se aplicável
+      if (typeof deb.remaining === "number") exists.remaining = deb.remaining;
+      return;
+    }
+    const copy = Object.assign({}, deb);
+    if (typeof copy.remaining === "number") copy._initial = copy.remaining;
+    else copy._initial = null;
+    this.debuffs.push(copy);
+    this.computeEffectiveStats();
+  }
+
+  removeDebuff(id) {
+    this.debuffs = (this.debuffs || []).filter((d) => d.id !== id);
+    this.computeEffectiveStats();
+  }
+
   update(dt, gameState) {
-    // Proteção contra dt absurdo
     if (dt <= 0) return;
 
-    // Atualizar timers
+    // atualizar timers de debuffs
+    if (Array.isArray(this.debuffs) && this.debuffs.length) {
+      let changed = false;
+      for (const d of this.debuffs) {
+        if (typeof d.remaining === "number") {
+          d.remaining -= dt;
+          if (d.remaining <= 0) {
+            d._expired = true;
+            changed = true;
+          }
+        }
+      }
+      if (changed) {
+        this.debuffs = this.debuffs.filter((d) => !d._expired);
+        this.computeEffectiveStats();
+      }
+    }
+
+    // timers normais
     this.cooldown = (this.cooldown || 0) - dt;
     this.retargetTimer = (this.retargetTimer || 0) - dt;
 
-    // Rebuscar alvo periodicamente
+    // retarget
     if (!this.target || this.retargetTimer <= 0) {
       this.retargetTimer = this.retargetInterval;
       this.target = this.findTarget(gameState.enemies || []);
     }
 
-    // Só atira quando cooldown <= 0 e existir alvo válido
+    // atirar se possível
     if (this.cooldown <= 0 && this.target) {
       this.fire(this.target, gameState);
-      // segurança: evitar divisão por zero / undefined
       const fr = this.fireRate && this.fireRate > 0 ? this.fireRate : 1;
       this.cooldown = 1 / fr;
     }
   }
 
-  /**
-   * Encontra o melhor alvo dentro do alcance
-   * @param {Array} enemies - Array de inimigos
-   * @returns {Enemy|null} - Melhor alvo ou null
-   */
   findTarget(enemies) {
     let bestTarget = null;
     let bestScore = -Infinity;
 
     for (const enemy of enemies) {
       if (enemy.dead) continue;
-
-      const distance = Math.hypot(enemy.x - this.x, enemy.y - this.y);
-      if (distance > this.range) continue;
-
-      // Passa o path total para cálculo mais preciso
+      const dist = Math.hypot(enemy.x - this.x, enemy.y - this.y);
+      if (dist > this.range) continue;
       const pathTotal = (enemy.pathObj && enemy.pathObj.total) || 1000;
-      const score = this.calculateTargetScore(enemy, distance, pathTotal);
+      const score = this.calculateTargetScore(enemy, dist, pathTotal);
       if (score > bestScore) {
         bestScore = score;
         bestTarget = enemy;
@@ -243,59 +472,31 @@ export class Tower {
     return bestTarget;
   }
 
-  /**
-   * Calcula pontuação do alvo para priorização
-   * @param {Enemy} enemy - Inimigo
-   * @param {number} distance - Distância até o inimigo
-   * @param {number} pathTotal - Comprimento total do caminho
-   * @returns {number} - Pontuação do alvo
-   */
   calculateTargetScore(enemy, distance, pathTotal = 1000) {
-    // quanto mais avançado no caminho, maior o progress (0..pathTotal)
     const progressTowardsBase = Math.max(
       0,
       (pathTotal || 1000) - (enemy.dist || 0)
     );
-
-    // quanto mais perto da torre, maior closeness (0..range)
     const closenessToTower = Math.max(0, (this.range || 0) - distance);
-
-    // pesos: prefira quem está mais próximo da base
     const wBase = 0.7;
     const wTower = 0.3;
-
     return wBase * progressTowardsBase + wTower * closenessToTower;
   }
 
-  /**
-   * Dispara contra um alvo
-   * @param {Enemy} target - Inimigo alvo
-   * @param {Object} gameState - Estado do jogo
-   */
   fire(target, gameState) {
     if (!target || target.dead) return;
 
     const dmg = typeof this.damage === "number" ? this.damage : 1;
     const killed = target.takeDamage(dmg);
 
-    // contabiliza
     this.totalDamageDealt += dmg;
+    if (killed) this.enemiesKilled++;
 
-    if (killed) {
-      this.enemiesKilled++;
-      // Não soma ouro aqui, já é feito no engine
-    }
-
-    // efeito visual opcional
+    // efeito visual (pode acionar partículas se houver)
     this.createFireEffect(target);
   }
 
-  /**
-   * Cria efeito visual de disparo
-   * @param {Enemy} target - Alvo do disparo
-   */
   createFireEffect(target) {
-    // Efeito simples - pode ser expandido no futuro
     if (typeof window !== "undefined" && window.createParticle) {
       window.createParticle({
         from: { x: this.x, y: this.y },
@@ -306,24 +507,13 @@ export class Tower {
     }
   }
 
-  /**
-   * Verifica se um ponto está dentro do alcance
-   * @param {number} x - Coordenada X
-   * @param {number} y - Coordenada Y
-   * @returns {boolean}
-   */
   isInRange(x, y) {
-    const distance = Math.hypot(x - this.x, y - this.y);
-    return distance <= this.range;
+    const d = Math.hypot(x - this.x, y - this.y);
+    return d <= this.range;
   }
 
-  /**
-   * Renderiza a torre no canvas
-   * @param {CanvasRenderingContext2D} ctx - Contexto do canvas
-   * @param {boolean} showRange - Se deve mostrar o alcance
-   */
   draw(ctx, showRange = false) {
-    // Alcance (círculo pontilhado)
+    // alcance (círculo pontilhado)
     if (showRange) {
       ctx.beginPath();
       ctx.setLineDash([4, 6]);
@@ -334,7 +524,7 @@ export class Tower {
       ctx.setLineDash([]);
     }
 
-    // Corpo da torre
+    // corpo
     ctx.fillStyle = this.color;
     ctx.fillRect(
       this.x - this.size / 2,
@@ -343,7 +533,7 @@ export class Tower {
       this.size
     );
 
-    // Borda da torre
+    // borda
     ctx.strokeStyle = "rgba(255,255,255,0.3)";
     ctx.lineWidth = 2;
     ctx.strokeRect(
@@ -353,7 +543,7 @@ export class Tower {
       this.size
     );
 
-    // Indicador de cooldown
+    // indicador de cooldown
     if (this.cooldown > 0) {
       const cooldownRatio = this.cooldown / (1 / this.fireRate);
       ctx.fillStyle = "rgba(255,255,255,0.5)";
@@ -365,21 +555,20 @@ export class Tower {
       );
     }
 
-    // Linha para o alvo atual
+    // linha para alvo
     if (this.target && !this.target.dead) {
       ctx.beginPath();
       ctx.moveTo(this.x, this.y);
       ctx.lineTo(this.target.x, this.target.y);
-      ctx.strokeStyle = "rgba(255,0,0,0.3)";
+      ctx.strokeStyle = "rgba(255,0,0,0.25)";
       ctx.lineWidth = 2;
       ctx.stroke();
     }
+
+    // Desenha indicadores visuais de debuffs (renderiza anéis/ícones/barra)
+    drawDebuffsForTower(ctx, this);
   }
 
-  /**
-   * Retorna estatísticas da torre
-   * @returns {Object}
-   */
   getStats() {
     return {
       type: this.type,
@@ -389,15 +578,12 @@ export class Tower {
       range: this.range,
       totalDamage: this.totalDamageDealt,
       kills: this.enemiesKilled,
-      efficiency: this.totalDamageDealt / this.cost,
+      efficiency: this.cost
+        ? this.totalDamageDealt / this.cost
+        : this.totalDamageDealt,
     };
   }
 
-  /**
-   * Melhora a torre (upgrade)
-   * @param {string} upgradeType - Tipo de melhoria
-   * @returns {Object} - Resultado da melhoria
-   */
   upgrade(upgradeType) {
     const upgrades = {
       damage: { cost: 30, multiplier: 1.5, property: "damage" },
@@ -410,9 +596,11 @@ export class Tower {
       return { success: false, reason: "Tipo de upgrade inválido" };
     }
 
-    // Aplicar upgrade
     this[upgrade.property] *= upgrade.multiplier;
     this.cost += upgrade.cost;
+
+    // atualizar baseline também (opcional — decide se upgrades são permanentes)
+    this.baseline[upgrade.property] = this[upgrade.property];
 
     return {
       success: true,
