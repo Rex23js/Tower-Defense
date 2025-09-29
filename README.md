@@ -1,144 +1,198 @@
-## 📖 Sumário
+# Tower Defense Acadêmico 🎯
 
-- [🎯 Sobre o Projeto](#-sobre-o-projeto)
-- [✨ Funcionalidades](#-funcionalidades)
-- [🛠️ Tecnologias Utilizadas](#️-tecnologias-utilizadas)
-- [🚀 Como Executar o Projeto](#-como-executar-o-projeto)
-- [🔌 API - Estrutura e Integração](#-api---estrutura-e-integração)
-- [✅ Testes e Qualidade](#-testes-e-qualidade)
-- [🔮 Roadmap de Futuras Implementações](#-roadmap-de-futuras-implementações)
-- [🤝 Como Contribuir](#-como-contribuir)
-- [👨‍💻 Autores](#-autores)
-- [📄 Licença](#-licença)
+![Status do Projeto](https://img.shields.io/badge/status-v1.0--alpha-yellow) ![License](https://img.shields.io/badge/license-MIT-blue)
+
+> Um projeto de demonstração acadêmica de um jogo Tower Defense construído com **Vanilla JS**, Canvas API e integração com APIs externas.
 
 ---
 
-## 🎯 Sobre o Projeto
+## Índice
 
-Este projeto é a materialização de um desafio acadêmico: criar um jogo de **Tower Defense** funcional e bem estruturado, utilizando apenas tecnologias web fundamentais. O objetivo principal foi aplicar e demonstrar um fluxo de trabalho de desenvolvimento completo, abrangendo desde a concepção e documentação inicial até os testes, tratamento de exceções e o deploy final de uma aplicação interativa.
-
----
-
-## ✨ Funcionalidades
-
-- ✅ **Sistema de Ondas (Waves):** Ondas de inimigos com dificuldade progressiva, carregadas dinamicamente via API.
-- ✅ **Torres Estratégicas:** 3 tipos de torres com características únicas (dano, alcance, cadência de tiro).
-- ✅ **Inimigos Variados:** 4 tipos de inimigos com diferentes atributos (velocidade, vida, etc.).
-- ✅ **Economia e Vidas:** Sistema de ouro para construção e vidas que determinam a derrota.
-- ✅ **Interface Intuitiva:** HUD clara para exibir recursos, onda atual e outras informações vitais.
-- ✅ **Ranking de Pontuação:** As pontuações são salvas e exibidas através de uma API REST.
-- ✅ **Responsividade:** Interface adaptável para uma boa experiência em diferentes resoluções de tela.
-- ✅ **Acessibilidade:** Navegação via teclado (`Tab` e `Enter`) para interações na UI.
+1. [Visão Geral e Justificativa](#visão-geral-e-justificativa)
+2. [Funcionalidades Implementadas](#funcionalidades-implementadas)
+3. [Arquitetura do Projeto](#arquitetura-do-projeto)
+4. [Sistema de Clima Dinâmico](#sistema-de-clima-dinâmico)
+5. [Tecnologias Utilizadas](#tecnologias-utilizadas)
+6. [APIs e Integrações](#apis-e-integrações)
+7. [Estrutura do Repositório](#estrutura-do-repositório)
+8. [Como Executar o Projeto (Local)](#como-executar-o-projeto-local)
+9. [Roadmap / Próximas Implementações](#roadmap--próximas-implementações)
+10. [Como Contribuir](#como-contribuir)
+11. [Autores](#autores)
+12. [Licença](#licença)
 
 ---
 
-## 🛠️ Tecnologias Utilizadas
+## Visão Geral e Justificativa
 
-O projeto foi construído com as seguintes ferramentas:
+**Visão Geral.** "Tower Defense Acadêmico" é uma Single Page Application (SPA) que simula um jogo de defesa por torres onde o jogador posiciona torres para deter ondas de inimigos. O foco deste repositório é demonstrar: arquitetura modular em JavaScript, uso da Canvas API para renderização 2D, integração com APIs externas e um sistema de eventos para desacoplar UI e lógica de jogo.
 
-| Ferramenta            | Descrição                                              |
-| --------------------- | ------------------------------------------------------ |
-| **HTML5**             | Estrutura semântica e elemento `<canvas>` para o jogo. |
-| **CSS3**              | Estilização e responsividade da interface.             |
-| **JavaScript (ES6+)** | Lógica do jogo, manipulação do DOM e requisições.      |
-| **JSON Server**       | Simulação de uma API RESTful para waves e scores.      |
-| **Git & GitHub**      | Versionamento de código e gerenciamento do projeto.    |
-| **Postman**           | Documentação e teste dos endpoints da API.             |
-| **Vercel/Netlify**    | Hospedagem e deploy contínuo.                          |
+**Justificativa.** O projeto é ideal para estudos e avaliação técnica — aborda temas como design de motor de jogo, balanceamento via arquivo de configuração, testes locais com JSON Server e manejo de falhas ao consumir APIs externas.
 
 ---
 
-## 🚀 Como Executar o Projeto
+## Funcionalidades Implementadas
 
-Siga os passos abaixo para rodar o jogo em seu ambiente local:
+* **Sistema de Ondas** com 12 ondas configuráveis via `db.json` (JSON Server).
+* **6 tipos de torres** (Básica, Perfurante, Área, Lentidão, Antiaérea, Boss Killer) com atributos e custo balanceáveis em `game-config.js`.
+* **5 tipos de inimigos**, incluindo um *boss* com atributos especiais.
+* **Sistema de Clima Dinâmico** que consome Open-Meteo e aplica debuffs no jogo.
+* **Efeitos visuais** (chuva, neblina, tempestade) renderizados com sistema de partículas no canvas.
+* **UI desacoplada**: `ui.js` escuta eventos do `WaveManager` e atualiza HUD (vida, ouro, onda).
+* **SPA** com roteamento por hash (`#home`, `#game`, `#victory`).
+* **Modo desenvolvedor**: painel de debug para forçar clima, ondas ou atributos.
+* **Design responsivo** adaptado para desktop e tablets (mobile com limitações devido ao canvas).
 
-```bash
-# 1. Clone este repositório
-git clone [https://github.com/seu-usuario/seu-repositorio.git](https://github.com/seu-usuario/seu-repositorio.git)
+---
 
-# 2. Navegue até o diretório do projeto
-cd seu-repositorio
+## Arquitetura do Projeto
 
-# 3. Instale as dependências (para o JSON Server)
-npm install
+Arquitetura modular em arquivos JS separados para manter separação de responsabilidades (SoC):
 
-# 4. Inicie a API fake em um terminal
-# O servidor rodará em http://localhost:3000
-npm run api
+* `main.js` — controlador da aplicação e roteamento.
+* `engine.js` — game loop, render e gestão de entidades.
+* `wave-manager.js` — emissor de eventos que gerencia as ondas.
+* `ui.js` — manipulação do DOM e reatividade da interface.
+* `entities.js` — classes `Tower`, `Enemy`, `Projectile` e lógica de combate.
+* `game-config.js` — arquivo de balanceamento (torres, inimigos, ondas).
+* `api.js` — abstração das chamadas à API local (`JSON Server`) e Open-Meteo.
 
-# 5. Abra o arquivo `index.html` no seu navegador
-# Dica: use a extensão "Live Server" do VS Code para uma melhor experiência.
+---
+
+## Sistema de Clima Dinâmico
+
+* **Fonte de dados:** Open-Meteo (código do clima / weathercode).
+* **Fallback seguro:** `safeGetWeather()` — caso a requisição falhe, aplica clima padrão para evitar travamentos.
+* **Impactos no gameplay:**
+
+  * *Neblina*: reduz alcance das torres.
+  * *Chuva / Tempestade*: reduz cadência de tiro (fire rate).
+* **Visuals**: partículas e shaders simples desenhados no canvas para chuva e neblina.
+
+---
+
+## Tecnologias Utilizadas
+
+* **HTML5**, **CSS3**, **JavaScript (ES6+)**
+* **Canvas API** para renderização do jogo
+* **JSON Server** para mock de API local (`db.json`)
+* **Git / GitHub** para versionamento
+* Ferramentas: VS Code, Live Server
+
+---
+
+## APIs e Integrações
+
+* **JSON Server (Local)** — fornece as ondas e dados do jogo a partir de `db.json`.
+* **Open-Meteo (Externa)** — fornece condições meteorológicas para modificar mecânicas.
+
+> Nota: As chamadas externas são encapsuladas em `api.js` — trate chaves e limites com cuidado.
+
+---
+
+## Estrutura do Repositório
+
+```
+/tower-defense-game
+├── css/
+│   └── style.css
+├── js/
+│   ├── api.js
+│   ├── engine.js
+│   ├── entities.js
+│   ├── game-config.js
+│   ├── main.js
+│   ├── ui.js
+│   └── wave-manager.js
+├── index.html
+├── db.json
+└── README.md
 ```
 
 ---
 
-## 🔌 API - Estrutura e Integração
+## Como Executar o Projeto (Local)
 
-A aplicação utiliza uma API REST simulada com `JSON Server` para gerenciar dados dinâmicos.
+### Pré-requisitos
 
-| Verbo  | Endpoint  | Descrição                                              |
-| :----- | :-------- | :----------------------------------------------------- |
-| `GET`  | `/waves`  | Retorna a configuração completa das ondas de inimigos. |
-| `GET`  | `/scores` | Retorna a lista de pontuações mais altas.              |
-| `POST` | `/scores` | Adiciona uma nova pontuação ao banco de dados.         |
+* Node.js (v14+ recomendado)
+* npm (ou yarn)
+* Live Server (opcional, extensão do VS Code)
 
-As requisições são tratadas de forma assíncrona com `async/await` e blocos `try...catch` para garantir que falhas de comunicação com o servidor não quebrem a aplicação, informando o usuário sobre o problema.
+### Passos
 
----
+1. Clone o repositório
 
-## ✅ Testes e Qualidade
+```bash
+git clone https://github.com/seu-usuario/seu-repositorio.git
+cd seu-repositorio
+```
 
-Para assegurar a robustez do projeto, foram aplicadas as seguintes estratégias de teste:
+2. Instale o JSON Server (se não quiser instalar globalmente use `npx`)
 
-- **Testes de API com Postman:** Uma collection completa foi criada para validar todos os endpoints, incluindo cenários de sucesso (`200 OK`, `201 Created`) e de erro (`404`, `500`). O arquivo `TowerDefense.postman_collection.json` está na branch `testes`.
-- **Testes Manuais e Casos de Uso:** Foram documentados e executados casos de teste para validar a lógica do jogo, como o posicionamento de torres, o cálculo de dano e a lógica de vitória/derrota.
-- **Tratamento de Casos Críticos:** O sistema foi projetado para lidar com falhas, como a indisponibilidade da API ou entradas inválidas do usuário, exibindo feedback claro sem interromper a experiência.
+```bash
+npm install -g json-server   # opcional
+# ou
+npx json-server --watch db.json
+```
 
----
+3. Inicie o servidor local (default `http://localhost:3000`)
 
-## 🔮 Roadmap de Futuras Implementações
+```bash
+npx json-server --watch db.json --port 3000
+```
 
-Este projeto tem potencial para crescer. As próximas funcionalidades planejadas são:
+4. Abra `index.html` com Live Server ou abra diretamente no navegador (use Live Server para evitar problemas de CORS ao consumir APIs locais)
 
-- [ ] **Novas Torres e Inimigos:** Expandir a variedade estratégica do jogo.
-- [ ] **Sistema de Upgrade:** Permitir que o jogador melhore as torres durante a partida.
-- [ ] **Efeitos Sonoros e Música:** Adicionar uma camada de imersão auditiva.
-- [ ] **Múltiplos Mapas:** Oferecer diferentes desafios e caminhos.
-- [ ] **Animações e Efeitos Visuais:** Polir as animações de ataque, explosão e morte.
-- [ ] **Salvar Progresso:** Implementar `localStorage` para salvar o jogo entre sessões.
-
----
-
-## 🤝 Como Contribuir
-
-Contribuições são sempre bem-vindas! Se você tem ideias para melhorar o projeto, siga os passos:
-
-1.  **Faça um Fork** deste repositório.
-2.  Crie uma nova branch (`git checkout -b feature/sua-feature`).
-3.  Faça commit das suas alterações (`git commit -m 'Adicionando nova feature'`).
-4.  Faça push para a branch (`git push origin feature/sua-feature`).
-5.  Abra um **Pull Request**.
+5. Jogar! Use o painel de desenvolvedor (tecla `D` por padrão) para forçar clima/ondas e testar balanceamento.
 
 ---
 
-<div align="center">
-## 👨‍💻 Autores
+## Roadmap / Próximas Implementações
 
-Este projeto foi desenvolvido com dedicação por:
-
-| [<img src="https://avatars.githubusercontent.com/u/200134059?v=4" width=115><br><sub>Ismael Gomes (Rex)</sub>](https://github.com/Rex23jsl) | [<img src="https://avatars.githubusercontent.com/u/202681925?v=4" width=115><br><sub>Eduardo Monteiro</sub>](https://github.com/eduardominhom) |
-| :-----------------------------------------------------------------------------------------------------------------------------------------: | :--------------------------------------------------------------------------------------------------------------------------------------------: |
-|                                                 [GitHub](https://github.com/Rex23js) <br/>                                                  |                                                   [GitHub](https://github.com/eduardominhom)                                                   |
-
----
-
-</div>
-## 📄 Licença
-
-Este projeto está sob a licença MIT. Veja o arquivo [LICENSE](LICENSE) para mais detalhes.
+* [ ] Sistema de pontuação e ranking persistido na API local
+* [ ] Efeitos sonoros para seleções, tiros e mortes
+* [ ] Sistema de upgrades inline para torres
+* [ ] Múltiplos mapas e caminhos alternativos
+* [ ] Modo cooperativo local (2 jogadores)
+* [ ] Exportar estatísticas para CSV / Google Sheets
 
 ---
 
-<div align="center">
-  <p>Feito com ❤️ e muito café☕!</p>
-</div>
+## Como Contribuir
+
+1. Fork este repositório
+2. Crie uma branch: `git checkout -b feature/nome-da-feature`
+3. Faça commits claros: `git commit -m "feat: descreva a mudança"`
+4. Push para a branch: `git push origin feature/nome-da-feature`
+5. Abra um Pull Request descrevendo as mudanças
+
+Sugestões rápidas: mantenha o `game-config.js` como fonte de verdade para balanceamento e adicione testes manuais no modo desenvolvedor.
+
+---
+
+## Autores
+
+<table align="center">
+  <tr>
+    <td align="center">
+      <img src="https://avatars.githubusercontent.com/u/200134059?v=4" width="96" alt="Ismael" />
+      <br/>
+      <sub><b>Ismael Gomes (Rex)</b></sub>
+    </td>
+    <td align="center">
+      <img src="https://avatars.githubusercontent.com/u/202681925?v=4" width="96" alt="Eduardo" />
+      <br/>
+      <sub><b>Eduardo Monteiro</b></sub>
+    </td>
+  </tr>
+
+</table>
+
+## Licença
+
+Este projeto está licenciado sob a **MIT License**. Veja o arquivo `LICENSE` para detalhes.
+
+---
+
+> Feito com muito café, debugging às 3 da manhã e uma pitada de sarcasmo.
