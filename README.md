@@ -188,7 +188,6 @@ Sugestões rápidas: mantenha o `game-config.js` como fonte de verdade para bala
   </tr>
 
 </table>
----
 
 ## Licença
 
