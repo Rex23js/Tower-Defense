@@ -1,4 +1,4 @@
-Tower Defense - Projeto Acadêmico
+Tower Defense - Projeto Acadêmico 🕹️
 Bem-vindo ao Tower Defense Acadêmico, um jogo construído com tecnologias web puras que demonstra uma arquitetura de software robusta, integração com APIs externas para funcionalidades dinâmicas e uma interface reativa. Esta versão evoluiu de um conceito simples para um jogo completo e polido.
 
 📖 Índice
@@ -69,20 +69,20 @@ engine.js: Motor do Jogo (Core): Contém o game loop, a lógica de renderizaçã
 
 wave-manager.js: Gerenciador de Estado: Controla o fluxo das ondas, o estado do jogo (jogando, pausado, vitória) e emite eventos para a UI, garantindo baixo acoplamento.
 
-ui.js: Camada de Visualização (View): Manipula todos os elementos do DOM, escuta os eventos do WaveManager para atualizar informações (vidas, ouro, onda atual) e lida com a interação do usuário (construção de torres, início de ondas).
+ui.js: Camada de Visualização (View): Manipula todos os elementos do DOM, escuta os eventos do WaveManager para atualizar informações (vidas, ouro, onda atual) e lida com a interação do usuário.
 
-entities.js: Modelos de Dados: Define as classes Tower e Enemy com toda a sua lógica de comportamento, como atacar, mover, receber dano e aplicar efeitos.
+entities.js: Modelos de Dados: Define as classes Tower e Enemy com toda a sua lógica de comportamento, como atacar, mover e receber dano.
 
-game-config.js: Arquivo de Configuração: Centraliza todas as variáveis de balanceamento (atributos de torres e inimigos, configurações de ondas), permitindo ajustes fáceis sem alterar a lógica do código.
+game-config.js: Arquivo de Configuração: Centraliza todas as variáveis de balanceamento, permitindo ajustes fáceis sem alterar a lógica do código.
 
-api.js: Camada de Serviço: Abstrai a comunicação com as APIs (local e externa), tratando das requisições e normalizando as respostas.
+api.js: Camada de Serviço: Abstrai a comunicação com as APIs, tratando das requisições e normalizando as respostas.
 
 4. Sistema de Clima Dinâmico
 Esta é uma das funcionalidades mais inovadoras do projeto. A integração com a API Open-Meteo adiciona uma camada imprevisível e estratégica ao jogo.
 
 Coleta de Dados: Ao iniciar uma partida, o engine.js faz uma chamada à API para obter as condições climáticas em tempo real. Um wrapper safeGetWeather garante que o jogo não quebre se a API falhar, usando um clima padrão como fallback.
 
-Efeitos Visuais e Sonoros: Um sistema de partículas renderiza efeitos de chuva ou neblina diretamente no canvas, criando uma imersão visual.
+Efeitos Visuais: Um sistema de partículas renderiza efeitos de chuva ou neblina diretamente no canvas, criando uma imersão visual.
 
 Impacto na Jogabilidade: O clima aplica debuffs que alteram a eficácia das torres:
 
@@ -181,18 +181,17 @@ Abra um Pull Request.
 
 11. Autores
 <div align="center">
-
 Este projeto foi desenvolvido com dedicação por:
 
 <img src="https://avatars.githubusercontent.com/u/200134059?v=4" width=115> <sub>Ismael Gomes (Rex)</sub>	<img src="https://avatars.githubusercontent.com/u/202681925?v=4" width=115> <sub>Eduardo Monteiro</sub>
 GitHub	GitHub
 
-Exportar para as Planilhas
+EXPORTAR PARA AS PLANILHAS
 </div>
 
 12. Licença
 Este projeto está sob a licença MIT. Veja o arquivo LICENSE para mais detalhes.
 
 <div align="center">
-  <p>Feito com ❤️ e muito café☕!</p>
+<p>Feito com ❤️ e muito café ☕!</p>
 </div>
