@@ -173,13 +173,20 @@ Sugestões rápidas: mantenha o `game-config.js` como fonte de verdade para bala
 
 ## Autores
 
-<div align="center">
-
-<img src="https://avatars.githubusercontent.com/u/200134059?v=4" width="96" alt="Ismael" />  <sub>**Ismael Gomes (Rex)**</sub>
-
-<img src="https://avatars.githubusercontent.com/u/202681925?v=4" width="96" alt="Eduardo" />  <sub>**Eduardo Monteiro**</sub>
-
-</div>
+<table align="center">
+  <tr>
+    <td align="center">
+      <img src="https://avatars.githubusercontent.com/u/200134059?v=4" width="96" alt="Ismael" />
+      <br/>
+      <sub><b>Ismael Gomes (Rex)</b></sub>
+    </td>
+    <td align="center">
+      <img src="https://avatars.githubusercontent.com/u/202681925?v=4" width="96" alt="Eduardo" />
+      <br/>
+      <sub><b>Eduardo Monteiro</b></sub>
+    </td>
+  </tr>
+</table>
 
 * Repositório original: `https://github.com/<seu-usuario>/<seu-repositorio>`
 
