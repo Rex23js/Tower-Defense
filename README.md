@@ -187,7 +187,6 @@ Sugestões rápidas: mantenha o `game-config.js` como fonte de verdade para bala
     </td>
   </tr>
 
-* Repositório original: `https://github.com/<seu-usuario>/<seu-repositorio>`
 </table>
 ---
 
