@@ -186,10 +186,9 @@ Sugestões rápidas: mantenha o `game-config.js` como fonte de verdade para bala
       <sub><b>Eduardo Monteiro</b></sub>
     </td>
   </tr>
-</table>
 
 * Repositório original: `https://github.com/<seu-usuario>/<seu-repositorio>`
-
+</table>
 ---
 
 ## Licença
