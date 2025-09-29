@@ -1,0 +1,1043 @@
+:root {
+  --bg: #ffffff;
+  --page-bg: #fff;
+  --panel: #f4f4f6;
+  --accent: #111827;
+  --muted: #6b7280;
+  --text: #0b1220;
+  --tab-active: #3b82f6;
+  --tab-hover: #e5f3ff;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  height: 100%;
+  overflow: hidden;
+  margin: 0;
+  font-family: Inter, Arial, sans-serif;
+  background: var(--page-bg);
+  color: var(--text);
+  padding: 0;
+}
+
+a {
+  color: inherit;
+}
+
+/* Header */
+.site-header {
+  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+  background: transparent;
+  padding: 18px 20px;
+}
+
+.header-inner {
+  max-width: 1000px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.brand .logo {
+  font-weight: 700;
+  font-size: 1.1rem;
+}
+
+.main-nav {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.main-nav .nav-btn {
+  padding: 8px 12px;
+  border-radius: 6px;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  background: transparent;
+  cursor: pointer;
+}
+
+/* Botão de Configurações - Quadrado do lado direito */
+.settings-button {
+  width: 44px !important;
+  height: 44px !important;
+  padding: 0 !important;
+  border-radius: 8px !important;
+  border: 1px solid rgba(0, 0, 0, 0.12) !important;
+  background: var(--panel) !important;
+  cursor: pointer;
+  font-size: 18px;
+  transition: all 0.3s ease;
+  display: flex !important;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
+  margin-left: 12px;
+}
+
+.settings-button:hover {
+  background: var(--accent) !important;
+  color: white;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+.settings-button:active {
+  transform: translateY(0);
+}
+
+/* Pages wrapper */
+.page {
+  --header-height: 72px;
+
+  width: 100vw;
+  max-width: 100%;
+  margin: 0;
+
+  min-height: calc(100vh - var(--header-height));
+
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  overflow: auto;
+}
+
+/* HOME / Hero - Refinado */
+.hero {
+  max-width: 700px;
+  margin: 4rem auto;
+  padding: 3rem;
+  text-align: center;
+
+  background-color: var(--panel);
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  border-radius: 8px;
+}
+
+.hero-title {
+  font-size: 2.8rem;
+  font-weight: 700;
+  margin-bottom: 1rem;
+  letter-spacing: -0.5px;
+}
+
+.hero-sub {
+  font-size: 1.15rem;
+  color: var(--muted);
+  margin-bottom: 2.5rem;
+  font-weight: 400;
+  line-height: 1.6;
+}
+
+.primary {
+  background-color: transparent;
+  color: var(--accent);
+  border: 2px solid var(--accent);
+
+  padding: 14px 28px;
+  text-decoration: none;
+  border-radius: 6px;
+  font-weight: 600;
+  cursor: pointer;
+
+  transition: background-color 0.2s ease-in-out, color 0.2s ease-in-out;
+}
+
+.primary:hover {
+  background-color: var(--accent);
+  color: var(--bg);
+}
+
+/* ===== Layout principal: shop + game lado a lado ===== */
+.game-wrap {
+  width: 100vw;
+  height: calc(100vh - 72px);
+  margin: 0;
+  padding: 16px;
+  display: grid;
+  grid-template-columns: minmax(240px, clamp(240px, 20vw, 320px)) 1fr;
+  gap: 18px;
+  box-sizing: border-box;
+  align-items: stretch;
+  background: transparent;
+}
+
+/* Shop com layout melhorado para coluna única */
+.shop {
+  background: var(--panel);
+  border-radius: 8px;
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  max-width: 320px;
+  padding: 0;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+
+/* Cabeçalho da loja (titulo + abas) */
+.shop-header {
+  padding: 16px;
+  flex-shrink: 0;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+.shop-header h3 {
+  margin: 0 0 16px 0;
+  font-size: 1.2rem;
+  font-weight: 700;
+  text-align: center;
+  color: var(--accent);
+}
+
+/* Tabs Navigation - Layout mais compacto */
+.shop-tabs {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 6px;
+  margin-bottom: 0;
+}
+
+.tab-button {
+  padding: 8px 6px;
+  border: none;
+  background: #f9fafb;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--muted);
+  transition: all 0.2s ease;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  text-align: center;
+  line-height: 1.2;
+  border: 1px solid rgba(0, 0, 0, 0.04);
+}
+
+.tab-button:hover {
+  background-color: var(--tab-hover);
+  color: var(--accent);
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
+}
+
+.tab-button.active {
+  background: var(--accent);
+  color: white;
+  box-shadow: 0 2px 6px rgba(59, 130, 246, 0.3);
+}
+
+/* Tab Content - Layout otimizado para coluna única */
+.tab-content {
+  padding: 12px;
+  flex: 1;
+  overflow-y: auto;
+  min-height: 0;
+}
+
+.tab-content::-webkit-scrollbar {
+  width: 6px;
+}
+
+.tab-content::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.03);
+  border-radius: 3px;
+}
+
+.tab-content::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.15);
+  border-radius: 3px;
+}
+
+.tab-content::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 0, 0, 0.25);
+}
+
+.tab-pane {
+  display: none;
+}
+
+.tab-pane.active {
+  display: block;
+}
+
+/* Shop items - Layout em coluna única melhorado */
+.shop-items {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.shop-item {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  padding: 10px;
+  border-radius: 8px;
+  background: #fff;
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  gap: 10px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+}
+
+.shop-item:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  border-color: rgba(0, 0, 0, 0.08);
+}
+
+.shop-item.selected {
+  outline: 2px solid var(--tab-active);
+  outline-offset: 1px;
+  background-color: rgba(59, 130, 246, 0.08);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.2);
+}
+
+.shop-item .thumb {
+  width: 48px;
+  height: 48px;
+  background: #efefef;
+  border-radius: 8px;
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  flex-shrink: 0;
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+.shop-item .meta {
+  flex: 1;
+  min-width: 0;
+}
+
+.shop-item .meta strong {
+  display: block;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--accent);
+  margin-bottom: 3px;
+  line-height: 1.3;
+}
+
+.shop-item .description {
+  color: var(--muted);
+  font-size: 11px;
+  line-height: 1.3;
+  margin-bottom: 4px;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+/* Novo contêiner para organizar as pills de estatísticas */
+.shop-item .stats-container {
+  display: grid; /* Mudar para Grid */
+  grid-template-columns: 1fr 1fr; /* Duas colunas de tamanho igual */
+  gap: 6px; /* Aumentar um pouco o espaçamento entre os itens */
+  margin-bottom: 8px; /* Espaço abaixo do conjunto de stats */
+}
+
+/* Ajuste sutil para o estilo da pill para um visual mais "cheio" */
+.shop-item .stat-item {
+  color: #6366f1;
+  font-size: 11px;
+  font-weight: 500;
+  line-height: 1.2;
+  background: rgba(99, 102, 241, 0.1);
+  padding: 5px 8px; /* Ajustar padding vertical */
+  border-radius: 4px; /* Menos arredondado para combinar com as bordas do item */
+  border: 1px solid rgba(99, 102, 241, 0.2);
+  white-space: nowrap;
+  text-overflow: ellipsis; /* Adicionado para evitar que o texto das pills vaze */
+  overflow: hidden; /* Adicionado para evitar que o texto das pills vaze */
+}
+
+/* Ajuste para a descrição, limitando a 2 ou 3 linhas */
+.shop-item .description {
+  color: var(--muted);
+  font-size: 11px;
+  line-height: 1.4; /* Aumentar um pouco o line-height para legibilidade */
+  margin-bottom: 8px; /* Aumentar margem para separar das pills */
+  display: -webkit-box;
+  -webkit-line-clamp: 3; /* Limitar a 3 linhas (ou 2 se preferir algo mais compacto) */
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  text-overflow: ellipsis; /* Garante que o texto seja cortado com '...' */
+}
+
+/* Manter a regra específica para o preço, ela já sobrepõe as cores */
+.shop-item .stat-item--price {
+  color: #059669;
+  background-color: rgba(5, 150, 105, 0.1);
+  border-color: rgba(5, 150, 105, 0.2);
+  font-weight: 700;
+}
+
+.shop-item .price {
+  font-weight: 700;
+  color: #059669;
+  font-size: 12px;
+  background: rgba(5, 150, 105, 0.1);
+  padding: 2px 6px;
+  border-radius: 4px;
+  display: inline-block;
+  margin-top: 2px;
+}
+
+/* Game area - Ocupa o espaço restante */
+.game-area {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  gap: 12px;
+}
+
+/* topbar dentro do game */
+.game-topbar {
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 6px;
+  padding: 10px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  z-index: 2;
+}
+
+.hud-inline span {
+  margin-right: 16px;
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.controls-inline button {
+  margin-left: 8px;
+  padding: 8px 12px;
+  border-radius: 6px;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  background: white;
+  cursor: pointer;
+  font-size: 12px;
+  transition: all 0.2s ease;
+}
+
+.controls-inline button:hover {
+  background: var(--panel);
+  transform: translateY(-1px);
+}
+
+/* Canvas: ocupa todo o espaço restante */
+.canvas-wrap {
+  flex: 1 1 auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6px;
+  min-height: 0;
+  overflow: hidden;
+  background: var(--panel);
+  border-radius: 6px;
+}
+
+/* Canvas responsivo */
+.canvas-wrap > canvas {
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: contain;
+  background: transparent;
+}
+
+canvas {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  width: 100%;
+  height: 100%;
+  max-width: none;
+}
+
+/* --- Configurações Overlay --- */
+.settings-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0, 0, 0, 0.75);
+  backdrop-filter: blur(4px);
+  z-index: 1001;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  visibility: hidden;
+  transition: all 0.3s ease;
+}
+
+.settings-overlay.is-visible {
+  opacity: 1;
+  visibility: visible;
+  display: flex;
+}
+
+.settings-content {
+  background: var(--page-bg);
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  padding: 40px 50px;
+  border-radius: 12px;
+  text-align: center;
+  position: relative;
+  min-width: 320px;
+  max-width: 90vw;
+  transform: scale(0.8) translateY(20px);
+  transition: transform 0.3s ease;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+}
+
+.settings-overlay.is-visible .settings-content {
+  transform: scale(1) translateY(0);
+}
+
+.settings-title {
+  margin: 0 0 30px 0;
+  font-size: 1.8rem;
+  font-weight: 700;
+  color: var(--accent);
+  letter-spacing: -0.5px;
+}
+
+.settings-group {
+  margin: 20px 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.settings-button-action,
+.settings-link {
+  display: block;
+  width: 100%;
+  padding: 14px 20px;
+  border-radius: 6px;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  text-align: center;
+  font-size: 1rem;
+  cursor: pointer;
+  text-decoration: none;
+  transition: all 0.2s ease;
+  font-weight: 500;
+}
+
+.settings-button-action {
+  background-color: var(--panel);
+  color: var(--text);
+}
+
+.settings-button-action:hover {
+  background-color: var(--accent);
+  color: white;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+.settings-link {
+  background-color: transparent;
+  color: var(--muted);
+}
+
+.settings-link:hover {
+  background-color: var(--accent);
+  color: white;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+/* Classe para ocultar ações fora do jogo */
+#game-actions.hidden {
+  display: none;
+}
+
+.settings-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 24px;
+}
+
+.settings-nav .nav-link {
+  font-size: 1.1rem;
+  text-decoration: none;
+  padding: 14px 24px;
+  border-radius: 8px;
+  transition: all 0.2s ease;
+  color: var(--text);
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  background: rgba(255, 255, 255, 0.5);
+  font-weight: 500;
+}
+
+.settings-nav .nav-link:hover {
+  background: var(--accent);
+  color: white;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.close-button {
+  position: absolute;
+  top: 15px;
+  right: 15px;
+  background: none;
+  border: none;
+  font-size: 28px;
+  cursor: pointer;
+  color: var(--muted);
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+}
+
+.close-button:hover {
+  background: rgba(0, 0, 0, 0.08);
+  color: var(--accent);
+  transform: scale(1.1);
+}
+
+/* Scores */
+.scores-box {
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  padding: 40px;
+  border-radius: 6px;
+  text-align: center;
+}
+
+.scores-box ol {
+  list-style: decimal;
+  margin: 20px auto 0;
+  padding-left: 18px;
+  text-align: left;
+  display: inline-block;
+}
+
+/* Docs */
+.doc-block {
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  padding: 20px;
+  border-radius: 6px;
+  margin-bottom: 18px;
+  background: #fff;
+}
+
+/* Focus for accessibility */
+button:focus,
+.shop-item:focus,
+.tab-button:focus,
+.settings-button:focus,
+.nav-link:focus,
+.close-button:focus {
+  outline: 3px solid #ffd166;
+  outline-offset: 2px;
+}
+
+/* Victory Screen */
+.victory-screen {
+  max-width: 800px;
+  margin: 3rem auto;
+  padding: 0 18px;
+}
+
+.victory-content {
+  background-color: var(--panel);
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  border-radius: 12px;
+  padding: 3rem 2.5rem;
+  text-align: center;
+  position: relative;
+}
+
+.victory-title {
+  font-size: 3.5rem;
+  font-weight: 800;
+  margin-bottom: 2rem;
+  color: var(--accent);
+  letter-spacing: -1px;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.victory-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 1.5rem;
+  margin: 2.5rem 0;
+}
+
+.stat-item {
+  background: #fff;
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  border-radius: 8px;
+  padding: 1.5rem 1rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.stat-item:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+.stat-label {
+  font-size: 0.9rem;
+  color: var(--muted);
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.stat-value {
+  font-size: 2.2rem;
+  font-weight: 700;
+  color: var(--accent);
+  line-height: 1;
+}
+
+.victory-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  justify-content: center;
+  margin-top: 2.5rem;
+}
+
+.victory-actions .primary,
+.victory-actions .secondary {
+  padding: 12px 24px;
+  border-radius: 8px;
+  text-decoration: none;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: 2px solid transparent;
+  font-size: 0.95rem;
+}
+
+.victory-actions .primary {
+  background-color: var(--accent);
+  color: var(--bg);
+  border-color: var(--accent);
+}
+
+.victory-actions .primary:hover {
+  background-color: transparent;
+  color: var(--accent);
+  transform: translateY(-1px);
+}
+
+.victory-actions .secondary {
+  background-color: transparent;
+  color: var(--accent);
+  border-color: rgba(0, 0, 0, 0.12);
+}
+
+.victory-actions .secondary:hover {
+  border-color: var(--accent);
+  background-color: rgba(17, 24, 39, 0.03);
+  transform: translateY(-1px);
+}
+
+/* Responsividade melhorada */
+@media (max-width: 1200px) {
+  .game-wrap {
+    grid-template-columns: 280px 1fr;
+  }
+
+  .shop {
+    max-width: 280px;
+  }
+}
+
+@media (max-width: 900px) {
+  .game-wrap {
+    display: flex;
+    flex-direction: column;
+    height: auto;
+    padding: 12px;
+    gap: 12px;
+  }
+
+  .shop {
+    max-width: 100%;
+    max-height: 40vh;
+    order: 1;
+  }
+
+  .game-area {
+    order: 2;
+    min-height: 50vh;
+  }
+
+  .canvas-wrap > canvas {
+    width: 100%;
+    height: auto;
+    aspect-ratio: 16 / 10;
+    max-height: 50vh;
+  }
+
+  .shop-tabs {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 4px;
+  }
+
+  .tab-button {
+    font-size: 9px;
+    padding: 6px 4px;
+  }
+}
+
+@media (max-width: 600px) {
+  .hero-title {
+    font-size: 28px;
+  }
+
+  .hero {
+    max-width: 95%;
+    margin: 2rem auto;
+    padding: 2rem;
+  }
+
+  .shop {
+    max-height: 35vh;
+  }
+
+  .shop-header {
+    padding: 12px;
+  }
+
+  .shop-header h3 {
+    font-size: 1.1rem;
+    margin-bottom: 12px;
+  }
+
+  .tab-content {
+    padding: 8px;
+  }
+
+  .shop-item {
+    padding: 8px;
+    gap: 8px;
+  }
+
+  .shop-item .thumb {
+    width: 40px;
+    height: 40px;
+  }
+
+  .shop-item .meta strong {
+    font-size: 12px;
+  }
+
+  .shop-item .description {
+    font-size: 10px;
+  }
+
+  .shop-item .stats {
+    font-size: 9px;
+    padding: 2px 4px;
+  }
+
+  .shop-item .price {
+    font-size: 11px;
+  }
+
+  .shop-tabs {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 4px;
+  }
+
+  .tab-button {
+    font-size: 8px;
+    padding: 6px 3px;
+  }
+
+  .game-topbar {
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .hud-inline {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    justify-content: center;
+  }
+
+  .hud-inline span {
+    margin-right: 0;
+    font-size: 12px;
+  }
+
+  .controls-inline {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    justify-content: center;
+  }
+
+  .controls-inline button {
+    margin-left: 0;
+    font-size: 11px;
+    padding: 6px 10px;
+  }
+
+  .settings-button {
+    width: 40px !important;
+    height: 40px !important;
+    font-size: 16px !important;
+  }
+
+  .settings-content {
+    padding: 30px 20px;
+    min-width: 280px;
+    margin: 20px;
+  }
+
+  .settings-title {
+    font-size: 1.5rem;
+    margin-bottom: 24px;
+  }
+}
+
+.game-canvas {
+  width: 100%;
+  height: 100%;
+}
+
+/* ========================================================== */
+/* ESTILOS DO PAINEL DE DEBUG                                 */
+/* ========================================================== */
+.debug-panel {
+  position: fixed;
+  bottom: 10px;
+  left: 10px;
+  background-color: rgba(10, 20, 40, 0.85);
+  color: white;
+  padding: 12px;
+  border-radius: 8px;
+  border: 1px solid #4a5568;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+  font-family: Inter, Arial, sans-serif;
+  z-index: 9999;
+  display: none; /* Escondido por padrão */
+}
+
+/* Mostra o painel quando a classe is-visible é adicionada */
+.debug-panel.is-visible {
+  display: block;
+}
+
+.debug-panel h4 {
+  margin: 0 0 10px 0;
+  font-size: 14px;
+  text-align: center;
+  border-bottom: 1px solid #4a5568;
+  padding-bottom: 8px;
+}
+
+.debug-panel .debug-buttons {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.debug-panel button {
+  background-color: #2d3748;
+  color: white;
+  border: 1px solid #4a5568;
+  border-radius: 4px;
+  padding: 8px;
+  font-size: 12px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.debug-panel button:hover {
+  background-color: #4a5568;
+}
+
+/* style.css */
+
+/* ... (código existente) ... */
+
+/* ========================================================== */
+/* ESTILOS PARA O MODO DESENVOLVEDOR NAS CONFIGURAÇÕES        */
+/* ========================================================== */
+.setting-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 0;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+  margin-bottom: 20px;
+}
+
+.setting-item label {
+  font-size: 1rem;
+  color: var(--text);
+}
+
+.toggle-switch {
+  position: relative;
+  display: inline-block;
+  width: 50px;
+  height: 28px;
+}
+
+.toggle-switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.toggle-switch .slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: #ccc;
+  transition: 0.4s;
+  border-radius: 28px;
+}
+
+.toggle-switch .slider:before {
+  position: absolute;
+  content: "";
+  height: 20px;
+  width: 20px;
+  left: 4px;
+  bottom: 4px;
+  background-color: white;
+  transition: 0.4s;
+  border-radius: 50%;
+}
+
+.toggle-switch input:checked + .slider {
+  background-color: #3b82f6; /* Azul (cor de --tab-active) */
+}
+
+.toggle-switch input:checked + .slider:before {
+  transform: translateX(22px);
+}

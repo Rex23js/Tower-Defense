@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Tower Defense - Projeto Acadêmico</title>
+    <link rel="stylesheet" href="css/style.css" />
+  </head>
+  <body>
+    <header class="site-header" role="banner">
+      <div class="header-inner">
+        <div class="brand"><span class="logo">Tower Defense</span></div>
+        <nav class="main-nav" role="navigation" aria-label="Menu principal">
+          <button class="nav-btn" data-link="#/">Home</button>
+          <button class="nav-btn" data-link="#/game">Jogar</button>
+          <!-- Botão de Configurações - Sempre visível -->
+          <button
+            id="btn-open-menu"
+            class="settings-button"
+            aria-label="Abrir configurações"
+            aria-haspopup="true"
+            aria-expanded="false"
+            title="Configurações"
+          >
+            ⚙️
+          </button>
+        </nav>
+      </div>
+    </header>
+
+    <main id="app" role="main" tabindex="-1"></main>
+
+    <!-- Overlay de Configurações (Global) -->
+    <div
+      id="settings-overlay"
+      class="settings-overlay"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="settings-title"
+    >
+      <div class="settings-content">
+        <h2 id="settings-title" class="settings-title">Opções</h2>
+        <div id="game-actions" class="settings-group">
+          <button id="btn-toggle-pause" class="settings-button-action">
+            ⏸️ Pausar
+          </button>
+          <button id="btn-restart-game" class="settings-button-action">
+            🔁 Reiniciar Partida
+          </button>
+          <div class="setting-item">
+            <label for="dev-mode-toggle">Modo Desenvolvedor</label>
+            <label class="toggle-switch">
+              <input type="checkbox" id="dev-mode-toggle" />
+              <span class="slider"></span>
+            </label>
+          </div>
+        </div>
+
+        <nav class="settings-nav settings-group">
+          <a href="#/" class="settings-link">🏠 Voltar ao Início</a>
+          <a href="#/scores" class="settings-link">🏆 Ver Ranking</a>
+        </nav>
+
+        <button
+          id="btn-close-menu"
+          class="close-button"
+          aria-label="Fechar configurações"
+        >
+          ×
+        </button>
+      </div>
+    </div>
+
+    <!-- HOME -->
+    <template id="view-home">
+      <section class="page home-page">
+        <div class="hero">
+          <div class="hero-content">
+            <h1 class="hero-title">Tower Defense</h1>
+            <p class="hero-sub">
+              Coloque torres, lute contra ondas de inimigos
+            </p>
+            <div class="hero-cta">
+              <button
+                id="btn-play"
+                class="primary"
+                aria-label="Jogar"
+                data-link="#/game"
+              >
+                JOGAR AGORA
+              </button>
+            </div>
+          </div>
+        </div>
+      </section>
+    </template>
+
+    <!-- GAME -->
+    <template id="view-game">
+      <section class="page game-page">
+        <div class="game-wrap">
+          <aside class="shop" aria-label="Loja de Torres" role="region">
+            <!-- Conteúdo será renderizado dinamicamente pelo ui.js -->
+          </aside>
+
+          <div class="game-area">
+            <div class="game-topbar">
+              <div class="hud-inline" role="status" aria-live="polite">
+                <span id="gold">Ouro: 0</span>
+                <span id="lives">Vidas: 20</span>
+                <span id="wave">Wave: 0</span>
+                <span id="enemy-count">Inimigos: 0</span>
+                <span id="weather-status" title="Condição do Clima">
+                  <span class="weather-icon">☀️</span>
+                  <span class="weather-label">Tempo Bom</span>
+                </span>
+              </div>
+
+              <div class="controls-inline">
+                <button
+                  id="btn-speed"
+                  class="secondary"
+                  title="Cicla velocidade 1x → 2x → 3x"
+                >
+                  Velocidade: 1x
+                </button>
+
+                <button id="btn-start-wave" class="secondary">
+                  Iniciar Wave
+                </button>
+                <button id="btn-auto-wave" class="secondary">
+                  Waves Auto (Off)
+                </button>
+              </div>
+            </div>
+
+            <div
+              class="canvas-wrap"
+              role="application"
+              aria-label="Área de jogo"
+            >
+              <canvas
+                class="game-canvas"
+                id="game-canvas"
+                tabindex="0"
+                aria-label="Canvas do jogo"
+              ></canvas>
+            </div>
+          </div>
+        </div>
+      </section>
+    </template>
+
+    <!-- SCORES -->
+    <template id="view-scores">
+      <section class="page scores-page">
+        <h2>Ranking de Pontuação</h2>
+        <div class="scores-box">
+          <div id="scores-list">Loading...</div>
+        </div>
+      </section>
+    </template>
+
+    <!-- VICTORY SCREEN -->
+    <template id="view-victory">
+      <section class="page victory-page">
+        <div class="victory-screen">
+          <div class="victory-content">
+            <h1 class="victory-title">🎉 VITÓRIA!</h1>
+            <div class="victory-stats">
+              <div class="stat-item">
+                <span class="stat-label">Pontuação Final:</span>
+                <span class="stat-value" id="final-score">0</span>
+              </div>
+              <div class="stat-item">
+                <span class="stat-label">Waves Completadas:</span>
+                <span class="stat-value" id="waves-completed">0</span>
+              </div>
+              <div class="stat-item">
+                <span class="stat-label">Vidas Restantes:</span>
+                <span class="stat-value" id="remaining-lives">0</span>
+              </div>
+              <div class="stat-item">
+                <span class="stat-label">Ouro Final:</span>
+                <span class="stat-value" id="final-gold">0</span>
+              </div>
+            </div>
+            <div class="victory-actions">
+              <button class="primary" data-link="#/game">
+                Jogar Novamente
+              </button>
+              <button class="secondary" data-link="#/">Voltar ao Menu</button>
+              <button class="secondary" data-link="#/scores">
+                Ver Ranking
+              </button>
+            </div>
+          </div>
+        </div>
+      </section>
+    </template>
+    <div id="debug-panel" class="debug-panel">
+      <h4>Clima (Debug)</h4>
+      <div class="debug-buttons">
+        <button data-weathercode="0">☀️ Limpo</button>
+        <button data-weathercode="45">🌫️ Neblina</button>
+        <button data-weathercode="61">🌧️ Chuva</button>
+        <button data-weathercode="95">⛈️ Temp.</button>
+      </div>
+    </div>
+
+    <script type="module" src="js/main.js"></script>
+  </body>
+</html>

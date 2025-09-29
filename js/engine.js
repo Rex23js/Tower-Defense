@@ -1,0 +1,1746 @@
+// js/engine.js
+import { getWaves, safeGetWeather } from "./api.js";
+import { WaveManager } from "./wave-manager.js";
+import { Enemy, Tower } from "./entities.js";
+import { GAME_CONFIG } from "./game-config.js";
+
+export let GameAPI = null;
+// tornar acessível ao processWeather
+let weatherOverlay = null;
+
+const DEFAULTS = {
+  startGold: GAME_CONFIG.startGold,
+  startLives: GAME_CONFIG.startLives,
+};
+
+const PATH_SAMPLE_PER_SEG = GAME_CONFIG.pathSamplePerSeg;
+const PATH_RADIUS_BLOCK = GAME_CONFIG.pathRadiusBlock;
+
+// Adicione estas melhorias ao seu engine.js
+
+// ==========================================================
+// SISTEMA DE PARTÍCULAS PARA CLIMA
+// ==========================================================
+
+class WeatherParticle {
+  constructor(x, y, type, canvasWidth, canvasHeight) {
+    this.x = x;
+    this.y = y;
+    this.type = type;
+    this.canvasWidth = canvasWidth;
+    this.canvasHeight = canvasHeight;
+    this.active = true;
+
+    // Configurações baseadas no tipo
+    switch (type) {
+      case "rain":
+        this.vx = -2 + Math.random() * 4;
+        this.vy = 200 + Math.random() * 100;
+        this.length = 8 + Math.random() * 12;
+        this.opacity = 0.3 + Math.random() * 0.4;
+        this.color = `rgba(173, 216, 230, ${this.opacity})`;
+        break;
+
+      case "fog":
+        this.vx = 10 + Math.random() * 20;
+        this.vy = -5 + Math.random() * 10;
+        this.size = 40 + Math.random() * 60;
+        this.opacity = 0.1 + Math.random() * 0.2;
+        this.color = `rgba(200, 200, 200, ${this.opacity})`;
+        this.life = 1.0;
+        this.maxLife = 3 + Math.random() * 4;
+        break;
+
+      case "storm":
+        this.vx = -10 + Math.random() * 20;
+        this.vy = 250 + Math.random() * 150;
+        this.length = 15 + Math.random() * 20;
+        this.opacity = 0.4 + Math.random() * 0.3;
+        this.color = `rgba(100, 149, 237, ${this.opacity})`;
+        this.lightning = Math.random() < 0.001; // Chance muito baixa de ser um raio
+        break;
+    }
+  }
+
+  update(dt) {
+    switch (this.type) {
+      case "rain":
+      case "storm":
+        this.x += this.vx * dt;
+        this.y += this.vy * dt;
+
+        // Reset quando sair da tela
+        if (this.y > this.canvasHeight + 20) {
+          this.y = -20;
+          this.x = Math.random() * this.canvasWidth;
+        }
+        if (this.x < -20 || this.x > this.canvasWidth + 20) {
+          this.x = Math.random() * this.canvasWidth;
+        }
+        break;
+
+      case "fog":
+        this.x += this.vx * dt;
+        this.life += dt;
+
+        // Fade in/out
+        const fadeProgress = Math.min(this.life / this.maxLife, 1);
+        if (fadeProgress > 0.7) {
+          this.opacity *= 0.98; // Fade out
+        }
+
+        if (this.x > this.canvasWidth + this.size || this.opacity < 0.01) {
+          this.x = -this.size;
+          this.y = Math.random() * this.canvasHeight;
+          this.life = 0;
+          this.opacity = 0.1 + Math.random() * 0.2;
+        }
+        break;
+    }
+  }
+
+  draw(ctx) {
+    ctx.save();
+    ctx.globalAlpha = this.opacity;
+
+    switch (this.type) {
+      case "rain":
+        ctx.strokeStyle = this.color;
+        ctx.lineWidth = 1.5;
+        ctx.beginPath();
+        ctx.moveTo(this.x, this.y);
+        ctx.lineTo(this.x + this.vx * 0.1, this.y - this.length);
+        ctx.stroke();
+        break;
+
+      case "fog":
+        const gradient = ctx.createRadialGradient(
+          this.x,
+          this.y,
+          0,
+          this.x,
+          this.y,
+          this.size
+        );
+        gradient.addColorStop(0, this.color);
+        gradient.addColorStop(1, "rgba(200, 200, 200, 0)");
+
+        ctx.fillStyle = gradient;
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+        ctx.fill();
+        break;
+
+      case "storm":
+        // Chuva mais intensa
+        ctx.strokeStyle = this.color;
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(this.x, this.y);
+        ctx.lineTo(this.x + this.vx * 0.1, this.y - this.length);
+        ctx.stroke();
+
+        // Ocasionalmente desenhar "raio" (linha brilhante)
+        if (this.lightning) {
+          ctx.strokeStyle = "rgba(255, 255, 255, 0.8)";
+          ctx.lineWidth = 3;
+          ctx.stroke();
+          this.lightning = false; // Uma vez só
+        }
+        break;
+    }
+
+    ctx.restore();
+  }
+}
+
+// ==========================================================
+// OVERLAY DE CLIMA NO CANVAS
+// ==========================================================
+
+class WeatherOverlay {
+  constructor(canvasWidth, canvasHeight) {
+    this.particles = [];
+    this.canvasWidth = canvasWidth;
+    this.canvasHeight = canvasHeight;
+    this.currentWeatherType = "clear";
+    this.intensity = 0;
+    this.targetIntensity = 0;
+    this.transitionSpeed = 0.5;
+  }
+
+  setWeather(weatherType, intensity = 1.0) {
+    this.currentWeatherType = weatherType;
+    this.targetIntensity = intensity;
+  }
+
+  updateCanvasSize(width, height) {
+    this.canvasWidth = width;
+    this.canvasHeight = height;
+  }
+
+  update(dt) {
+    // Transição suave da intensidade
+    if (this.intensity < this.targetIntensity) {
+      this.intensity = Math.min(
+        this.targetIntensity,
+        this.intensity + this.transitionSpeed * dt
+      );
+    } else if (this.intensity > this.targetIntensity) {
+      this.intensity = Math.max(
+        this.targetIntensity,
+        this.intensity - this.transitionSpeed * dt
+      );
+    }
+
+    // Gerenciar partículas baseado no clima atual
+    this.manageParticles();
+
+    // Atualizar partículas existentes
+    for (const particle of this.particles) {
+      particle.update(dt);
+    }
+
+    // Remover partículas inativas
+    this.particles = this.particles.filter((p) => p.active);
+  }
+
+  manageParticles() {
+    const desiredCount = this.getDesiredParticleCount();
+
+    // Adicionar partículas se necessário
+    while (this.particles.length < desiredCount) {
+      this.addParticle();
+    }
+
+    // Remover partículas em excesso
+    while (this.particles.length > desiredCount) {
+      this.particles.pop();
+    }
+  }
+
+  getDesiredParticleCount() {
+    if (this.intensity <= 0.1) return 0;
+
+    switch (this.currentWeatherType) {
+      case "rain":
+        return Math.floor(80 * this.intensity);
+      case "fog":
+        return Math.floor(15 * this.intensity);
+      case "storm":
+        return Math.floor(120 * this.intensity);
+      default:
+        return 0;
+    }
+  }
+
+  addParticle() {
+    let x, y;
+
+    switch (this.currentWeatherType) {
+      case "rain":
+      case "storm":
+        x = Math.random() * this.canvasWidth;
+        y = -20 - Math.random() * 100;
+        break;
+      case "fog":
+        x = -60 - Math.random() * 40;
+        y = Math.random() * this.canvasHeight;
+        break;
+      default:
+        return;
+    }
+
+    this.particles.push(
+      new WeatherParticle(
+        x,
+        y,
+        this.currentWeatherType,
+        this.canvasWidth,
+        this.canvasHeight
+      )
+    );
+  }
+
+  draw(ctx) {
+    if (this.intensity <= 0.1) return;
+
+    ctx.save();
+
+    // Escurecimento mais forte para tempestades (sutileza controlada pela intensidade)
+    if (this.currentWeatherType === "storm" && this.intensity > 0.5) {
+      ctx.fillStyle = `rgba(0, 0, 0, ${0.15 * this.intensity})`;
+      ctx.fillRect(0, 0, this.canvasWidth, this.canvasHeight);
+    }
+
+    // Tint leve para chuva/neblina (ajuda legibilidade e mood)
+    if (this.currentWeatherType === "rain") {
+      ctx.fillStyle = `rgba(40,70,120, ${0.03 * this.intensity})`;
+      ctx.fillRect(0, 0, this.canvasWidth, this.canvasHeight);
+    } else if (this.currentWeatherType === "fog") {
+      ctx.fillStyle = `rgba(200,200,200, ${0.06 * this.intensity})`;
+      ctx.fillRect(0, 0, this.canvasWidth, this.canvasHeight);
+    }
+
+    // Desenhar partículas
+    for (const particle of this.particles) {
+      particle.draw(ctx);
+    }
+
+    // Flash aleatório de relâmpago em storms (pequeno brilho, impacto visual)
+    if (
+      this.currentWeatherType === "storm" &&
+      Math.random() < 0.004 * Math.max(0.001, this.intensity)
+    ) {
+      ctx.fillStyle = `rgba(255,255,255, ${0.45 * this.intensity})`;
+      ctx.fillRect(0, 0, this.canvasWidth, this.canvasHeight);
+      // opção: evento para som/efeito
+      window.dispatchEvent(new CustomEvent("weather:lightning"));
+    }
+
+    ctx.restore();
+  }
+}
+
+// ==========================================================
+// INDICADORES VISUAIS NAS TORRES
+// ==========================================================
+
+function drawWeatherEffectOnTower(ctx, tower, weatherEffect) {
+  if (
+    !weatherEffect ||
+    !weatherEffect.modifiers ||
+    weatherEffect.modifiers.length === 0
+  ) {
+    return;
+  }
+
+  // Verificar se a torre é afetada
+  const isAffected = weatherEffect.modifiers.some(
+    (mod) => mod.category && tower.category === mod.category
+  );
+
+  if (!isAffected) return;
+
+  ctx.save();
+
+  // Efeito visual baseado no tipo de clima
+  const time = Date.now() / 1000;
+
+  switch (weatherEffect.label) {
+    case "Neblina":
+      // Círculo pulsante cinza ao redor da torre
+      ctx.globalAlpha = 0.3 + 0.2 * Math.sin(time * 2);
+      ctx.strokeStyle = "#888888";
+      ctx.lineWidth = 2;
+      ctx.setLineDash([4, 4]);
+      ctx.beginPath();
+      ctx.arc(tower.x, tower.y, tower.size + 8, 0, Math.PI * 2);
+      ctx.stroke();
+      break;
+
+    case "Chuva":
+      // Pequenas gotas ao redor da torre
+      ctx.globalAlpha = 0.4;
+      ctx.fillStyle = "#4A90E2";
+      for (let i = 0; i < 6; i++) {
+        const angle = (time + i) * 3;
+        const radius = tower.size + 10;
+        const x = tower.x + Math.cos(angle) * radius;
+        const y = tower.y + Math.sin(angle) * radius;
+        ctx.beginPath();
+        ctx.arc(x, y, 2, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      break;
+
+    case "Tempestade":
+      // Efeito elétrico intermitente
+      if (Math.sin(time * 8) > 0.7) {
+        ctx.globalAlpha = 0.6;
+        ctx.strokeStyle = "#FFD700";
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.arc(tower.x, tower.y, tower.size + 5, 0, Math.PI * 2);
+        ctx.stroke();
+
+        // Raios pequenos
+        for (let i = 0; i < 4; i++) {
+          const angle = ((Math.PI * 2) / 4) * i;
+          const startRadius = tower.size / 2 + 2;
+          const endRadius = tower.size + 12;
+          ctx.beginPath();
+          ctx.moveTo(
+            tower.x + Math.cos(angle) * startRadius,
+            tower.y + Math.sin(angle) * startRadius
+          );
+          ctx.lineTo(
+            tower.x + Math.cos(angle) * endRadius,
+            tower.y + Math.sin(angle) * endRadius
+          );
+          ctx.stroke();
+        }
+      }
+      break;
+  }
+
+  ctx.restore();
+}
+
+// ==========================================================
+// MELHORIAS NO DEBUG PANEL
+// ==========================================================
+
+// Adicione esta função para mostrar informações detalhadas:
+function updateDebugWeatherInfo(weatherEffect) {
+  const debugPanel = document.getElementById("debug-panel");
+  if (!debugPanel) return;
+
+  // Adicionar informações de status
+  let statusDiv = debugPanel.querySelector(".weather-status");
+  if (!statusDiv) {
+    statusDiv = document.createElement("div");
+    statusDiv.className = "weather-status";
+    statusDiv.style.cssText = `
+      margin-top: 10px;
+      padding: 8px;
+      background: rgba(0,0,0,0.7);
+      border-radius: 4px;
+      font-size: 12px;
+      color: #fff;
+    `;
+    debugPanel.appendChild(statusDiv);
+  }
+
+  const effectInfo = weatherEffect
+    ? `
+    <strong>Clima Ativo: ${weatherEffect.label} ${
+        weatherEffect.icon
+      }</strong><br>
+    ${weatherEffect.modifiers
+      .map((mod) => `Torre ${mod.category}: ${mod.property} x${mod.multiplier}`)
+      .join("<br>")}
+  `
+    : "Nenhum efeito ativo";
+
+  statusDiv.innerHTML = effectInfo;
+}
+
+// Chame esta função sempre que o clima mudar:
+// updateDebugWeatherInfo(state.activeWeatherEffect);
+
+// ==========================================================
+// FUNÇÕES UTILITÁRIAS
+// ==========================================================
+
+function distance(p1, p2) {
+  const dx = p1.x - p2.x;
+  const dy = p1.y - p2.y;
+  return Math.sqrt(dx * dx + dy * dy);
+}
+
+// Catmull-Rom helpers
+function catmullRom(p0, p1, p2, p3, t) {
+  const t2 = t * t;
+  const t3 = t2 * t;
+  const x =
+    0.5 *
+    (2 * p1.x +
+      (-p0.x + p2.x) * t +
+      (2 * p0.x - 5 * p1.x + 4 * p2.x - p3.x) * t2 +
+      (-p0.x + 3 * p1.x - 3 * p2.x + p3.x) * t3);
+  const y =
+    0.5 *
+    (2 * p1.y +
+      (-p0.y + p2.y) * t +
+      (2 * p0.y - 5 * p1.y + 4 * p2.y - p3.y) * t2 +
+      (-p0.y + 3 * p1.y - 3 * p2.y + p3.y) * t3);
+  return { x, y };
+}
+
+function buildSmoothPath(waypoints, segmentsPerCurve = PATH_SAMPLE_PER_SEG) {
+  if (!waypoints || waypoints.length < 2) return [...(waypoints || [])];
+  const pts = [];
+  const extended = [
+    waypoints[0],
+    ...waypoints,
+    waypoints[waypoints.length - 1],
+  ];
+  for (let i = 1; i < extended.length - 2; i++) {
+    const p0 = extended[i - 1];
+    const p1 = extended[i];
+    const p2 = extended[i + 1];
+    const p3 = extended[i + 2];
+    for (let s = 0; s < segmentsPerCurve; s++) {
+      const t = s / segmentsPerCurve;
+      pts.push(catmullRom(p0, p1, p2, p3, t));
+    }
+  }
+  pts.push(waypoints[waypoints.length - 1]);
+  return pts;
+}
+
+function buildPathDistances(points) {
+  const cum = [0];
+  for (let i = 1; i < points.length; i++) {
+    const dx = points[i].x - points[i - 1].x;
+    const dy = points[i].y - points[i - 1].y;
+    cum.push(cum[i - 1] + Math.hypot(dx, dy));
+  }
+  return { points, cumulative: cum, total: cum[cum.length - 1] };
+}
+
+function samplePointAtDistance(pathObj, distance) {
+  const { points, cumulative } = pathObj;
+  if (!points || points.length === 0) return { x: 0, y: 0 };
+  if (distance <= 0) return points[0];
+  if (distance >= pathObj.total) return points[points.length - 1];
+  let low = 0;
+  let high = cumulative.length - 1;
+  while (low <= high) {
+    const mid = Math.floor((low + high) / 2);
+    if (cumulative[mid] <= distance && distance <= cumulative[mid + 1]) {
+      const a = points[mid];
+      const b = points[mid + 1];
+      const segLen = cumulative[mid + 1] - cumulative[mid];
+      const t = segLen === 0 ? 0 : (distance - cumulative[mid]) / segLen;
+      return { x: a.x + (b.x - a.x) * t, y: a.y + (b.y - a.y) * t };
+    }
+    if (cumulative[mid] < distance) low = mid + 1;
+    else high = mid - 1;
+  }
+  return points[points.length - 1];
+}
+
+function distanceToPath(pt, pathPoints) {
+  if (!pathPoints || pathPoints.length === 0) return Infinity;
+  let minD = Infinity;
+  for (let i = 0; i < pathPoints.length - 1; i++) {
+    const a = pathPoints[i];
+    const b = pathPoints[i + 1];
+    const vx = b.x - a.x;
+    const vy = b.y - a.y;
+    const wx = pt.x - a.x;
+    const wy = pt.y - a.y;
+    const vLen2 = vx * vx + vy * vy;
+    let t = vLen2 > 0 ? (vx * wx + vy * wy) / vLen2 : 0;
+    t = Math.max(0, Math.min(1, t));
+    const px = a.x + vx * t;
+    const py = a.y + vy * t;
+    const d = Math.hypot(pt.x - px, pt.y - py);
+    if (d < minD) minD = d;
+  }
+  return minD;
+}
+
+function isOverlappingAnotherTower(x, y, newTowerSize, existingTowers) {
+  for (const tower of existingTowers) {
+    const requiredDist = (newTowerSize + tower.size) / 2;
+    if (distance({ x, y }, { x: tower.x, y: tower.y }) < requiredDist) {
+      return true;
+    }
+  }
+  return false;
+}
+
+function getMousePos(canvas, evt) {
+  const rect = canvas.getBoundingClientRect();
+  return {
+    x: evt.clientX - rect.left,
+    y: evt.clientY - rect.top,
+  };
+}
+
+function setupStableCanvas(canvas) {
+  const container = canvas.parentElement;
+  let lastWidth = 0;
+  let lastHeight = 0;
+
+  function updateCanvasSize() {
+    const containerRect = container.getBoundingClientRect();
+    const newWidth = Math.max(300, Math.floor(containerRect.width));
+    const newHeight = Math.max(200, Math.floor(containerRect.height));
+
+    if (
+      Math.abs(newWidth - lastWidth) < 2 &&
+      Math.abs(newHeight - lastHeight) < 2
+    ) {
+      return null;
+    }
+
+    lastWidth = newWidth;
+    lastHeight = newHeight;
+
+    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+
+    canvas.style.width = newWidth + "px";
+    canvas.style.height = newHeight + "px";
+    canvas.width = Math.floor(newWidth * dpr);
+    canvas.height = Math.floor(newHeight * dpr);
+
+    const ctx = canvas.getContext("2d");
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctx.imageSmoothingEnabled = true;
+    ctx.imageSmoothingQuality = "high";
+
+    return { cssW: newWidth, cssH: newHeight, dpr, ctx };
+  }
+
+  return updateCanvasSize();
+}
+
+function generateStableWaypoints(cssW, cssH) {
+  const margin = Math.min(cssW, cssH) * 0.08;
+  const segmentW = (cssW - margin * 2) / 6;
+  const segmentH = (cssH - margin * 2) / 4;
+
+  return [
+    { x: margin, y: cssH - margin },
+    { x: margin + segmentW * 1.2, y: cssH - margin },
+    { x: margin + segmentW * 1.2, y: cssH - margin - segmentH * 1.5 },
+    { x: margin + segmentW * 2.8, y: cssH - margin - segmentH * 1.5 },
+    { x: margin + segmentW * 2.8, y: margin + segmentH * 0.5 },
+    { x: margin + segmentW * 1.5, y: margin + segmentH * 0.5 },
+    { x: margin + segmentW * 1.5, y: cssH - margin - segmentH * 2.8 },
+    { x: margin + segmentW * 4, y: cssH - margin - segmentH * 2.8 },
+    { x: margin + segmentW * 4, y: cssH - margin - segmentH * 1.8 },
+    { x: margin + segmentW * 5.2, y: cssH - margin - segmentH * 1.8 },
+    { x: margin + segmentW * 5.2, y: margin + segmentH * 1.2 },
+    { x: cssW - margin, y: margin + segmentH * 1.2 },
+  ];
+}
+
+/**
+ * Processa a resposta da API de clima e define o efeito ativo no estado do jogo.
+ */
+// ---------- SUBSTITUIR processWeather e applyWeatherEffects ----------
+
+/**
+ * Quando o clima muda, aplica/remova debuffs de forma controlada.
+ * Mantemos um label em state.lastWeatherLabel para evitar reaplicações.
+ */
+function processWeather(weatherData, state) {
+  state.currentWeather = weatherData;
+  const code = weatherData?.weathercode || 0;
+  const effects = GAME_CONFIG.weather?.effects || {};
+
+  let activeEffect = effects.clear || {
+    label: "Tempo Bom",
+    icon: "☀️",
+    modifiers: [],
+  };
+
+  for (const key in effects) {
+    const eff = effects[key];
+    if (Array.isArray(eff?.codes) && eff.codes.includes(code)) {
+      activeEffect = eff;
+      break;
+    }
+  }
+
+  // Se o efeito mudou, a gente sincroniza debuffs nas torres
+  const prevLabel = state.lastWeatherLabel;
+  state.activeWeatherEffect = activeEffect;
+  state.lastWeatherLabel = activeEffect.label;
+
+  // Atualiza overlay visual (mesma lógica de antes)
+  if (weatherOverlay) {
+    let weatherType = "clear";
+    let intensity = 0;
+    switch (activeEffect.label) {
+      case "Chuva":
+        weatherType = "rain";
+        intensity = 0.7;
+        break;
+      case "Neblina":
+        weatherType = "fog";
+        intensity = 0.8;
+        break;
+      case "Tempestade":
+        weatherType = "storm";
+        intensity = 1.0;
+        break;
+    }
+    weatherOverlay.setWeather(weatherType, intensity);
+  }
+
+  // Só reagimos se o clima realmente mudou (evita re-aplicar multiplicações toda frame)
+  if (prevLabel !== activeEffect.label) {
+    // remover debuffs de clima anteriores e aplicar novos
+    applyWeatherEffectsOnChange(state, activeEffect);
+  }
+
+  updateDebugWeatherInfo(state.activeWeatherEffect);
+
+  window.dispatchEvent(
+    new CustomEvent("weather:update", { detail: state.activeWeatherEffect })
+  );
+}
+
+/**
+ * Aplica os modificadores de clima às torres.
+ */
+/**
+ * Aplica / remove debuffs quando o clima muda (chamado apenas no evento de mudança).
+ * Cada modifier do GAME_CONFIG.weather.effects deve ser:
+ *  { category: "support", property: "range", multiplier: 0.75, duration: null }
+ * duration: se null -> efeito enquanto o clima durar; se número -> tempo em segundos
+ */
+function applyWeatherEffectsOnChange(state, activeEffect) {
+  const idPrefix = "weather-";
+
+  // Remover debuffs de clima antigos
+  for (const tower of state.towers) {
+    if (Array.isArray(tower.debuffs)) {
+      tower.debuffs = tower.debuffs.filter((d) => !d.id?.startsWith(idPrefix));
+    }
+    // resetar stats para baseline antes de aplicar novos efeitos
+    if (typeof tower.resetToBaseline === "function") tower.resetToBaseline();
+  }
+
+  if (!activeEffect || !Array.isArray(activeEffect.modifiers)) return;
+
+  // Aplicar novos debuffs conforme modifiers
+  for (const mod of activeEffect.modifiers) {
+    const debuffId = `${idPrefix}${activeEffect.label}:${mod.property}`;
+    // para cada torre da categoria aplicamos um debuff
+    for (const tower of state.towers) {
+      if (mod.category && tower.category !== mod.category) continue;
+
+      // construir debuff (duration null -> live enquanto clima ativo)
+      const deb = {
+        id: debuffId,
+        property: mod.property,
+        multiplier: mod.multiplier,
+        remaining: typeof mod.duration === "number" ? mod.duration : null,
+        source: activeEffect.label,
+        label: activeEffect.label,
+      };
+
+      tower.debuffs = tower.debuffs || [];
+      tower.debuffs.push(deb);
+    }
+  }
+
+  // recalcular stats imediatamente
+  for (const tower of state.towers) {
+    if (typeof tower.computeEffectiveStats === "function")
+      tower.computeEffectiveStats();
+  }
+}
+
+/**
+ * Atualiza o timer do clima e busca novos dados quando necessário.
+ */
+function updateWeatherTimer(dt, state) {
+  state.weatherTimer += dt;
+  if (state.weatherTimer >= (GAME_CONFIG.weather?.updateInterval || 300)) {
+    state.weatherTimer = 0;
+    safeGetWeather(
+      GAME_CONFIG.weather?.latitude || -30.0346,
+      GAME_CONFIG.weather?.longitude || -51.2177
+    )
+      .then((response) => {
+        processWeather(response.data, state);
+        console.info("Clima atualizado:", state.activeWeatherEffect?.label);
+      })
+      .catch((err) => console.warn("Falha na atualização do clima:", err));
+  }
+}
+
+// ==========================================================
+// INÍCIO DO ENGINE
+// ==========================================================
+
+export async function initEngine(canvas) {
+  if (!canvas) return null;
+
+  // Configuração inicial estável
+  const canvasData = setupStableCanvas(canvas);
+  if (!canvasData) return null;
+
+  let { cssW, cssH, dpr, ctx } = canvasData;
+  // Inicializar sistema de clima visual
+  weatherOverlay = new WeatherOverlay(cssW, cssH);
+  // Estado inicial
+  const initialWaypoints = generateStableWaypoints(cssW, cssH);
+  const state = {
+    currentWeather: null,
+    activeWeatherEffect: null,
+    weatherTimer: 0,
+    enemies: [],
+    towers: [],
+    projectiles: [], // INICIALIZADO
+    effects: [], // INICIALIZADO
+    gold: DEFAULTS.startGold,
+    lives: DEFAULTS.startLives,
+    currentWave: 0,
+    waves: [],
+    running: true,
+    selectedTowerType: null,
+    mouse: { x: 0, y: 0, isValid: false },
+    canvas,
+    waypoints: initialWaypoints,
+    pathPoints: buildSmoothPath(initialWaypoints, PATH_SAMPLE_PER_SEG),
+    pathObj: null,
+    base: {
+      centerX: initialWaypoints[0].x,
+      centerY: initialWaypoints[0].y,
+      width: Math.min(cssW, cssH) * 0.12,
+      height: Math.min(cssW, cssH) * 0.12,
+      hp: GAME_CONFIG.base?.hp || 100,
+    },
+    decorations: [],
+    cssW,
+    cssH,
+    dpr,
+    needsRecalc: false,
+  };
+
+  state.pathObj = buildPathDistances(state.pathPoints);
+
+  function generateDecorations() {
+    const decs = [];
+    const density = Math.floor((state.cssW * state.cssH) / 15000);
+    const tries = Math.max(20, Math.min(80, density)); // Menos decorações, mas maiores
+
+    for (let i = 0; i < tries; i++) {
+      const margin = Math.min(state.cssW, state.cssH) * 0.08;
+      const px = margin + Math.random() * (state.cssW - margin * 2);
+      const py = margin + Math.random() * (state.cssH - margin * 2);
+      const d = distanceToPath({ x: px, y: py }, state.pathPoints);
+
+      if (d > PATH_RADIUS_BLOCK + 35) {
+        // Árvores muito maiores
+        const r = 15 + Math.random() * Math.min(state.cssW, state.cssH) * 0.08;
+        decs.push({
+          x: px,
+          y: py,
+          r,
+          type: "tree", // Só árvores, sem pedras
+          treeType: Math.random() > 0.5 ? "oak" : "pine", // Dois tipos de árvore
+        });
+      }
+    }
+    return decs;
+  }
+
+  state.decorations = generateDecorations();
+
+  // Atualizar tamanho do overlay de clima
+  if (weatherOverlay) {
+    weatherOverlay.updateCanvasSize(state.cssW, state.cssH);
+  }
+
+  const waveManager = new WaveManager();
+  // CORRIGIDO: expor a instância no state
+  state.waveManager = waveManager;
+
+  // ==========================================================
+  // EVENT LISTENERS
+  // ==========================================================
+
+  function handleMouseMove(e) {
+    const pos = getMousePos(canvas, e);
+    state.mouse.x = pos.x;
+    state.mouse.y = pos.y;
+  }
+
+  function handleMouseLeave() {
+    state.selectedTowerType = null;
+  }
+
+  function handleClick(e) {
+    if (!state.selectedTowerType) return;
+
+    const { x: mx, y: my } = getMousePos(canvas, e);
+    const config = GAME_CONFIG.towerTypes[state.selectedTowerType];
+    if (!config) return;
+
+    if (state.gold < config.cost) {
+      flashMessage("Ouro insuficiente!");
+      return;
+    }
+
+    const dToPath = distanceToPath({ x: mx, y: my }, state.pathPoints);
+    const isInvalidPath = dToPath < PATH_RADIUS_BLOCK;
+    const isInvalidTower = isOverlappingAnotherTower(
+      mx,
+      my,
+      config.size,
+      state.towers
+    );
+
+    const baseLeft = state.base.centerX - state.base.width / 2;
+    const baseRight = state.base.centerX + state.base.width / 2;
+    const baseTop = state.base.centerY - state.base.height / 2;
+    const baseBottom = state.base.centerY + state.base.height / 2;
+    const isInvalidBase =
+      mx >= baseLeft && mx <= baseRight && my >= baseTop && my <= baseBottom;
+
+    if (isInvalidPath || isInvalidTower || isInvalidBase) {
+      if (isInvalidPath) flashMessage("Muito próximo do caminho!");
+      else if (isInvalidTower) flashMessage("Muito próximo de outra torre!");
+      else if (isInvalidBase) flashMessage("Não pode construir sobre a base!");
+      return;
+    }
+
+    state.gold -= config.cost;
+    const tower = new Tower(mx, my, state.selectedTowerType);
+    state.towers.push(tower);
+  }
+
+  canvas.addEventListener("mousemove", handleMouseMove);
+  canvas.addEventListener("mouseleave", handleMouseLeave);
+  canvas.addEventListener("click", handleClick);
+
+  // ==========================================================
+  // FUNÇÕES AUXILIARES (CORRIGIDAS)
+  // ==========================================================
+
+  function getTowerAt(x, y) {
+    return state.towers.find((t) => Math.hypot(t.x - x, t.y - y) <= t.size);
+  }
+
+  function placeTower(x, y, type) {
+    const cfg = GAME_CONFIG.towerTypes[type];
+    if (!cfg) return { ok: false, reason: "tipo inválido" };
+    if (state.gold < cfg.cost)
+      return { ok: false, reason: "ouro insuficiente" };
+
+    const dToPath = distanceToPath({ x, y }, state.pathPoints);
+    if (dToPath < PATH_RADIUS_BLOCK) return { ok: false, reason: "no_path" };
+    if (isOverlappingAnotherTower(x, y, cfg.size, state.towers))
+      return { ok: false, reason: "overlap" };
+
+    state.gold -= cfg.cost;
+    const tower = new Tower(x, y, type);
+    state.towers.push(tower);
+    return { ok: true, tower };
+  }
+
+  function sellTower(tower) {
+    const idx = state.towers.indexOf(tower);
+    if (idx === -1) return { ok: false };
+    const refund = Math.floor(tower.cost * 0.5);
+    state.gold += refund;
+    state.towers.splice(idx, 1);
+    return { ok: true, refund };
+  }
+
+  function upgradeTower(tower, upgradeType) {
+    if (!tower) return { ok: false, reason: "no tower" };
+    const res = tower.upgrade && tower.upgrade(upgradeType);
+    return res || { ok: false, reason: "upgrade not available" };
+  }
+
+  // ==========================================================
+  // API PÚBLICA (CORRIGIDA)
+  // ==========================================================
+
+  let rafId = null;
+
+  GameAPI = {
+    placeTowerAt: (x, y, type) => placeTower(x, y, type),
+    selectTowerType: (type) => {
+      state.selectedTowerType = type;
+    },
+    startNextWave: () => {
+      if (waveManager && typeof waveManager.startNextWave === "function") {
+        try {
+          waveManager.startNextWave(state);
+        } catch (err) {
+          console.warn("waveManager.startNextWave falhou:", err);
+        }
+      } else {
+        console.warn("waveManager.startNextWave não está disponível");
+      }
+    },
+    togglePause: () => {
+      state.running = !state.running;
+      if (state.running) {
+        if (waveManager && typeof waveManager.resumeGame === "function") {
+          try {
+            waveManager.resumeGame();
+          } catch (err) {
+            console.warn("waveManager.resumeGame falhou:", err);
+          }
+        } else {
+          console.warn("waveManager.resumeGame não disponível");
+        }
+      } else {
+        if (waveManager && typeof waveManager.pauseGame === "function") {
+          try {
+            waveManager.pauseGame();
+          } catch (err) {
+            console.warn("waveManager.pauseGame falhou:", err);
+          }
+        } else {
+          console.warn("waveManager.pauseGame não disponível");
+        }
+      }
+    },
+
+    setAutoWaves: (enabled) => {
+      if (waveManager && typeof waveManager.setAutoWaves === "function") {
+        try {
+          waveManager.setAutoWaves(enabled);
+        } catch (err) {
+          console.warn("waveManager.setAutoWaves falhou:", err);
+        }
+      } else {
+        console.warn("waveManager.setAutoWaves não disponível");
+      }
+    },
+    toggleAutoWaves: () => {
+      if (waveManager && typeof waveManager.toggleAutoWaves === "function") {
+        try {
+          waveManager.toggleAutoWaves();
+        } catch (err) {
+          console.warn("waveManager.toggleAutoWaves falhou:", err);
+        }
+      } else {
+        console.warn("waveManager.toggleAutoWaves não disponível");
+      }
+    },
+
+    getWaveStatus: () => waveManager.getStatus(),
+    getState: () => state,
+    getWaveManager: () => waveManager, // CORRIGIDO: retorna a instância real
+    placeTower: placeTower,
+    sellTower: sellTower,
+    getTowerAt: getTowerAt,
+    upgradeTower: upgradeTower,
+
+    forceWeather(code) {
+      console.log(`[DEBUG] Forçando clima com código: ${code}`);
+      const mockWeatherData = { weathercode: code, temperature: 20 };
+      processWeather(mockWeatherData, state);
+    },
+
+    destroy() {
+      state.running = false;
+      if (rafId) cancelAnimationFrame(rafId);
+      try {
+        canvas.removeEventListener("mousemove", handleMouseMove);
+        canvas.removeEventListener("mouseleave", handleMouseLeave);
+        canvas.removeEventListener("click", handleClick);
+        window.removeEventListener("resize", handleResize);
+      } catch (e) {
+        // ignore
+      }
+    },
+  };
+
+  // ==========================================================
+  // INICIALIZAÇÃO DAS WAVES E CLIMA
+  // ==========================================================
+
+  try {
+    const [wavesResp, weatherResp] = await Promise.allSettled([
+      getWaves(),
+      safeGetWeather(
+        GAME_CONFIG.weather?.latitude || -30.0346,
+        GAME_CONFIG.weather?.longitude || -51.2177
+      ),
+    ]);
+
+    if (wavesResp.status === "fulfilled" && wavesResp.value?.data) {
+      waveManager.initialize(wavesResp.value.data);
+    } else {
+      console.warn(
+        "Falha ao carregar waves; usando configuração local",
+        wavesResp.reason
+      );
+      waveManager.initialize(GAME_CONFIG.waveDefinitions);
+    }
+
+    if (weatherResp.status === "fulfilled" && weatherResp.value?.data) {
+      processWeather(weatherResp.value.data, state);
+      console.info(
+        "Clima carregado:",
+        state.activeWeatherEffect?.label,
+        weatherResp.value.meta
+      );
+    } else {
+      console.warn(
+        "Falha ao carregar clima; usando tempo limpo",
+        weatherResp.reason
+      );
+      processWeather({ weathercode: 0, temperature: 20 }, state);
+    }
+  } catch (e) {
+    console.warn("Falha geral na inicialização; usando fallbacks", e);
+    waveManager.initialize(GAME_CONFIG.waveDefinitions);
+    processWeather({ weathercode: 0, temperature: 20 }, state);
+  }
+
+  // CORRIGIDO: sobrescreve spawn para usar state corretamente
+  waveManager.spawnEnemy = (type) => {
+    const startDistance = state.pathObj.total + 24 + Math.random() * 60;
+    const e = new Enemy(type, startDistance, state.pathObj);
+    state.enemies.push(e);
+  };
+
+  // ==========================================================
+  // FUNÇÕES DE RENDERIZAÇÃO
+  // ==========================================================
+
+  function drawGrid(ctx) {
+    const step = Math.max(
+      16,
+      Math.min(40, Math.min(state.cssW, state.cssH) / 25)
+    );
+    ctx.save();
+    ctx.globalAlpha = 0.08;
+    ctx.strokeStyle = "#ffffff";
+    ctx.lineWidth = 0.5;
+
+    for (let x = 0; x <= state.cssW; x += step) {
+      ctx.beginPath();
+      ctx.moveTo(x + 0.5, 0);
+      ctx.lineTo(x + 0.5, state.cssH);
+      ctx.stroke();
+    }
+    for (let y = 0; y <= state.cssH; y += step) {
+      ctx.beginPath();
+      ctx.moveTo(0, y + 0.5);
+      ctx.lineTo(state.cssW, y + 0.5);
+      ctx.stroke();
+    }
+    ctx.restore();
+  }
+
+  function renderDecorations(ctx) {
+    for (const d of state.decorations) {
+      ctx.save();
+
+      if (d.type === "rock") {
+        // Pedras com leve transparência e sombra
+        ctx.globalAlpha = 0.3;
+        ctx.fillStyle = "#696969";
+        ctx.beginPath();
+        ctx.ellipse(d.x, d.y, d.r, d.r * 0.8, 0, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Sombra da pedra
+        ctx.globalAlpha = 0.12;
+        ctx.fillStyle = "#000000";
+        ctx.beginPath();
+        ctx.ellipse(d.x + 2, d.y + 2, d.r, d.r * 0.8, 0, 0, Math.PI * 2);
+        ctx.fill();
+      } else {
+        // ÁRVORES OPACAS (sem afetar por globalAlpha geral)
+        ctx.globalAlpha = 1.0; // <-- aqui: árvores totalmente opacas
+
+        // Parâmetros de copa/tronco
+        const w = d.r * 0.6;
+        const h = d.r * 1.4;
+
+        // Tronco (opaco)
+        ctx.fillStyle = "#8b4513";
+        ctx.fillRect(d.x - w / 6, d.y - h / 4, w / 3, h / 2);
+
+        // Copa da árvore (opaca)
+        ctx.fillStyle = "#228b22";
+        ctx.beginPath();
+        ctx.arc(d.x, d.y - h / 3, w / 2, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Sombra discreta (separada, com alpha baixo)
+        ctx.globalAlpha = 0.08;
+        ctx.fillStyle = "#000000";
+        ctx.beginPath();
+        ctx.arc(d.x + 3, d.y + 3, w / 2, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      ctx.restore();
+    }
+  }
+
+  function renderPath(ctx, pathPoints) {
+    if (!pathPoints || pathPoints.length < 2) return;
+
+    const pathWidth = Math.max(
+      30,
+      Math.min(60, Math.min(state.cssW, state.cssH) / 15)
+    );
+    const borderWidth = Math.max(3, pathWidth * 0.12);
+
+    ctx.save();
+
+    // Estrada principal de terra
+    ctx.beginPath();
+    ctx.moveTo(pathPoints[0].x, pathPoints[0].y);
+    for (let i = 1; i < pathPoints.length; i++) {
+      ctx.lineTo(pathPoints[i].x, pathPoints[i].y);
+    }
+
+    ctx.lineWidth = pathWidth;
+    ctx.strokeStyle = GAME_CONFIG.visual?.pathColor || "#8b4513";
+    ctx.lineCap = "round";
+    ctx.lineJoin = "round";
+    ctx.stroke();
+
+    // Bordas da estrada (grama/terra mais escura)
+    ctx.beginPath();
+    ctx.moveTo(pathPoints[0].x, pathPoints[0].y);
+    for (let i = 1; i < pathPoints.length; i++) {
+      ctx.lineTo(pathPoints[i].x, pathPoints[i].y);
+    }
+
+    ctx.lineWidth = pathWidth + borderWidth * 2;
+    ctx.strokeStyle = GAME_CONFIG.visual?.pathBorderColor || "#654321";
+    ctx.globalCompositeOperation = "destination-over";
+    ctx.stroke();
+    ctx.globalCompositeOperation = "source-over";
+
+    // Trilhas de roda na estrada
+    for (let offset of [-pathWidth / 6, pathWidth / 6]) {
+      ctx.beginPath();
+      for (let i = 0; i < pathPoints.length; i++) {
+        const point = pathPoints[i];
+        let perpX = 0,
+          perpY = 0;
+
+        if (i < pathPoints.length - 1) {
+          const next = pathPoints[i + 1];
+          const dx = next.x - point.x;
+          const dy = next.y - point.y;
+          const len = Math.sqrt(dx * dx + dy * dy);
+          if (len > 0) {
+            perpX = (-dy / len) * offset;
+            perpY = (dx / len) * offset;
+          }
+        }
+
+        if (i === 0) ctx.moveTo(point.x + perpX, point.y + perpY);
+        else ctx.lineTo(point.x + perpX, point.y + perpY);
+      }
+
+      ctx.lineWidth = 2;
+      ctx.strokeStyle = "rgba(101, 67, 33, 0.6)";
+      ctx.stroke();
+    }
+
+    // Linha central pontilhada mais sutil
+    const dashSize = Math.max(6, pathWidth / 10);
+    ctx.setLineDash([dashSize, dashSize * 1.5]);
+    ctx.lineWidth = Math.max(1, pathWidth / 25);
+    ctx.strokeStyle =
+      GAME_CONFIG.visual?.pathCenterColor || "rgba(139, 69, 19, 0.4)";
+
+    ctx.beginPath();
+    ctx.moveTo(pathPoints[0].x, pathPoints[0].y);
+    for (let i = 1; i < pathPoints.length; i++) {
+      ctx.lineTo(pathPoints[i].x, pathPoints[i].y);
+    }
+    ctx.stroke();
+    ctx.setLineDash([]);
+
+    ctx.restore();
+  }
+
+  function renderBase(ctx, base) {
+    const left = base.centerX - base.width / 2;
+    const top = base.centerY - base.height / 2;
+    const centerX = base.centerX;
+    const centerY = base.centerY;
+    const size = base.width;
+
+    ctx.save();
+
+    // Base do castelo (muralha principal)
+    ctx.fillStyle = GAME_CONFIG.visual?.castleWallColor || "#708090";
+    ctx.fillRect(left, top + size * 0.2, size, size * 0.6);
+
+    // Torres laterais
+    const towerWidth = size * 0.25;
+    const towerHeight = size * 0.8;
+
+    // Torre esquerda
+    ctx.fillStyle = GAME_CONFIG.visual?.castleTowerColor || "#2f4f4f";
+    ctx.fillRect(left - towerWidth * 0.3, top, towerWidth, towerHeight);
+
+    // Torre direita
+    ctx.fillRect(left + size - towerWidth * 0.7, top, towerWidth, towerHeight);
+
+    // Torre central (mais alta)
+    const centralTowerWidth = size * 0.3;
+    ctx.fillRect(
+      centerX - centralTowerWidth / 2,
+      top - size * 0.1,
+      centralTowerWidth,
+      towerHeight + size * 0.1
+    );
+
+    // Telhados das torres (formato triangular)
+    ctx.fillStyle = GAME_CONFIG.visual?.castleRoofColor || "#8b0000";
+
+    // Telhado torre esquerda
+    ctx.beginPath();
+    ctx.moveTo(left - towerWidth * 0.3, top);
+    ctx.lineTo(left - towerWidth * 0.3 + towerWidth, top);
+    ctx.lineTo(left - towerWidth * 0.3 + towerWidth / 2, top - size * 0.15);
+    ctx.closePath();
+    ctx.fill();
+
+    // Telhado torre direita
+    ctx.beginPath();
+    ctx.moveTo(left + size - towerWidth * 0.7, top);
+    ctx.lineTo(left + size - towerWidth * 0.7 + towerWidth, top);
+    ctx.lineTo(
+      left + size - towerWidth * 0.7 + towerWidth / 2,
+      top - size * 0.15
+    );
+    ctx.closePath();
+    ctx.fill();
+
+    // Telhado torre central
+    ctx.beginPath();
+    ctx.moveTo(centerX - centralTowerWidth / 2, top - size * 0.1);
+    ctx.lineTo(centerX + centralTowerWidth / 2, top - size * 0.1);
+    ctx.lineTo(centerX, top - size * 0.25);
+    ctx.closePath();
+    ctx.fill();
+
+    // Portão principal
+    ctx.fillStyle = GAME_CONFIG.visual?.castleDoorColor || "#654321";
+    const doorWidth = size * 0.15;
+    const doorHeight = size * 0.25;
+    ctx.fillRect(
+      centerX - doorWidth / 2,
+      top + size * 0.55,
+      doorWidth,
+      doorHeight
+    );
+
+    // Janelas nas torres
+    ctx.fillStyle = "#000000";
+    const windowSize = size * 0.05;
+
+    // Janelas torre esquerda
+    ctx.fillRect(
+      left - towerWidth * 0.3 + towerWidth / 2 - windowSize / 2,
+      top + towerHeight * 0.3,
+      windowSize,
+      windowSize
+    );
+    ctx.fillRect(
+      left - towerWidth * 0.3 + towerWidth / 2 - windowSize / 2,
+      top + towerHeight * 0.6,
+      windowSize,
+      windowSize
+    );
+
+    // Janelas torre direita
+    ctx.fillRect(
+      left + size - towerWidth * 0.7 + towerWidth / 2 - windowSize / 2,
+      top + towerHeight * 0.3,
+      windowSize,
+      windowSize
+    );
+    ctx.fillRect(
+      left + size - towerWidth * 0.7 + towerWidth / 2 - windowSize / 2,
+      top + towerHeight * 0.6,
+      windowSize,
+      windowSize
+    );
+
+    // Janela torre central
+    ctx.fillRect(
+      centerX - windowSize / 2,
+      top + towerHeight * 0.2,
+      windowSize,
+      windowSize
+    );
+
+    // Bandeira no topo da torre central
+    ctx.fillStyle = "#ff0000";
+    ctx.fillRect(
+      centerX + size * 0.02,
+      top - size * 0.25,
+      size * 0.08,
+      size * 0.06
+    );
+
+    // Mastro da bandeira
+    ctx.strokeStyle = "#654321";
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(centerX, top - size * 0.25);
+    ctx.lineTo(centerX, top - size * 0.35);
+    ctx.stroke();
+
+    // Contornos para dar profundidade
+    ctx.strokeStyle = "#000000";
+    ctx.lineWidth = 1;
+    ctx.globalAlpha = 0.3;
+
+    // Contorno muralha principal
+    ctx.strokeRect(left, top + size * 0.2, size, size * 0.6);
+
+    // Contornos das torres
+    ctx.strokeRect(left - towerWidth * 0.3, top, towerWidth, towerHeight);
+    ctx.strokeRect(
+      left + size - towerWidth * 0.7,
+      top,
+      towerWidth,
+      towerHeight
+    );
+    ctx.strokeRect(
+      centerX - centralTowerWidth / 2,
+      top - size * 0.1,
+      centralTowerWidth,
+      towerHeight + size * 0.1
+    );
+
+    ctx.restore();
+  }
+  function renderTowerGhost(ctx) {
+    if (!state.selectedTowerType) return;
+
+    const config = GAME_CONFIG.towerTypes[state.selectedTowerType];
+    if (!config) return;
+
+    const mx = state.mouse.x;
+    const my = state.mouse.y;
+
+    const dToPath = distanceToPath({ x: mx, y: my }, state.pathPoints);
+    const isInvalidPath = dToPath < PATH_RADIUS_BLOCK;
+    const isInvalidTower = isOverlappingAnotherTower(
+      mx,
+      my,
+      config.size,
+      state.towers
+    );
+
+    const baseLeft = state.base.centerX - state.base.width / 2;
+    const baseRight = state.base.centerX + state.base.width / 2;
+    const baseTop = state.base.centerY - state.base.height / 2;
+    const baseBottom = state.base.centerY + state.base.height / 2;
+    const isInvalidBase =
+      mx >= baseLeft && mx <= baseRight && my >= baseTop && my <= baseBottom;
+
+    state.mouse.isValid = !isInvalidPath && !isInvalidTower && !isInvalidBase;
+
+    const color = state.mouse.isValid
+      ? "rgba(0, 255, 0, 0.3)"
+      : "rgba(255, 0, 0, 0.3)";
+
+    const GHOST_RANGE_SCALE = GAME_CONFIG.visual?.ghostRangeScale ?? 0.6;
+    const GHOST_BODY_SCALE = GAME_CONFIG.visual?.ghostBodyScale ?? 0.25;
+
+    const rangeSide = config.range * 1 * GHOST_RANGE_SCALE;
+    const ghostSize = config.size * GHOST_BODY_SCALE;
+    const halfGhost = ghostSize / 2;
+
+    ctx.save();
+    ctx.globalAlpha = 1.0;
+    ctx.fillStyle = color;
+    ctx.fillRect(mx - rangeSide / 2, my - rangeSide / 2, rangeSide, rangeSide);
+    ctx.restore();
+
+    ctx.save();
+    ctx.globalAlpha = 0.7;
+    ctx.fillStyle = config.color || "#999";
+    ctx.fillRect(mx - halfGhost, my - halfGhost, ghostSize, ghostSize);
+    ctx.lineWidth = Math.max(1, ghostSize * 0.06);
+    ctx.strokeStyle = "#fff";
+    ctx.strokeRect(mx - halfGhost, my - halfGhost, ghostSize, ghostSize);
+    ctx.restore();
+  }
+
+  // ==========================================================
+  // UPDATE E RENDER (CORRIGIDOS)
+  // ==========================================================
+
+  function update(dt) {
+    if (!state.running) return;
+
+    // Recalculo de layout quando necessário
+    if (state.needsRecalc) {
+      const newData = setupStableCanvas(canvas);
+      if (newData) {
+        state.cssW = newData.cssW;
+        state.cssH = newData.cssH;
+        state.dpr = newData.dpr;
+        ctx = newData.ctx;
+
+        state.waypoints = generateStableWaypoints(state.cssW, state.cssH);
+        state.pathPoints = buildSmoothPath(
+          state.waypoints,
+          PATH_SAMPLE_PER_SEG
+        );
+        state.pathObj = buildPathDistances(state.pathPoints);
+
+        const baseSize = Math.min(state.cssW, state.cssH) * 0.12;
+        state.base.centerX = state.waypoints[0].x;
+        state.base.centerY = state.waypoints[0].y;
+        state.base.width = baseSize;
+        state.base.height = baseSize;
+
+        state.decorations = generateDecorations();
+
+        if (weatherOverlay) {
+          weatherOverlay.updateCanvasSize(state.cssW, state.cssH);
+        }
+      }
+      state.needsRecalc = false;
+    }
+
+    // Atualizar clima e aplicar efeitos (sem desenhar aqui)
+    // Atualizar clima (fetch somente quando necessário). Debuffs são sincronizados apenas na mudança.
+    updateWeatherTimer(dt, state);
+
+    // Atualizar overlay (apenas atualização de física/partículas, sem draw)
+    if (weatherOverlay) {
+      weatherOverlay.update(dt);
+    }
+
+    // Atualizar wave manager (defensivo)
+    if (waveManager && typeof waveManager.update === "function") {
+      try {
+        waveManager.update(dt, state);
+      } catch (err) {
+        console.warn("waveManager.update falhou:", err);
+      }
+    }
+
+    // Atualizar torres
+    for (const t of state.towers) {
+      try {
+        t.update(dt, state);
+      } catch (err) {
+        console.warn("tower.update falhou:", err);
+      }
+    }
+
+    // Atualizar inimigos e capturar retornos
+    const reachedBaseEnemies = [];
+    for (const e of state.enemies) {
+      try {
+        const result = e.update(dt);
+        if (result === "reached_base") reachedBaseEnemies.push(e);
+      } catch (err) {
+        console.warn("enemy.update falhou:", err);
+      }
+    }
+
+    // Atualizar projéteis e efeitos
+    for (const p of state.projectiles) {
+      try {
+        if (p && typeof p.update === "function") p.update(dt, state.enemies);
+      } catch (err) {
+        console.warn("projectile.update falhou:", err);
+      }
+    }
+    for (const ef of state.effects) {
+      try {
+        if (ef && typeof ef.update === "function") ef.update(dt);
+      } catch (err) {
+        console.warn("effect.update falhou:", err);
+      }
+    }
+
+    // Processar inimigos mortos
+    const killedEnemies = state.enemies.filter(
+      (e) => e.dead && !e._processedDead
+    );
+    if (killedEnemies.length > 0) {
+      for (const enemy of killedEnemies) {
+        state.gold += enemy.goldValue || 0;
+        if (waveManager && typeof waveManager.onEnemyDefeated === "function") {
+          try {
+            waveManager.onEnemyDefeated(enemy);
+          } catch (err) {
+            console.warn("waveManager.onEnemyDefeated falhou:", err);
+          }
+        }
+        enemy._processedDead = true;
+      }
+    }
+
+    // Processar inimigos que chegaram à base
+    for (const enemy of reachedBaseEnemies) {
+      state.lives -= 1;
+      enemy.dead = true;
+      if (waveManager && typeof waveManager.onEnemyDefeated === "function") {
+        try {
+          waveManager.onEnemyDefeated(enemy);
+        } catch (err) {
+          console.warn("waveManager.onEnemyDefeated falhou:", err);
+        }
+      }
+    }
+
+    // Filtrar listas
+    state.enemies = state.enemies.filter((e) => !e.dead);
+    state.projectiles = state.projectiles.filter(
+      (p) => p && p.active !== false
+    );
+    state.effects = state.effects.filter((e) => e && e.active !== false);
+
+    // Atualizar HUD com segurança
+    const goldEl = document.getElementById("gold");
+    const livesEl = document.getElementById("lives");
+    if (goldEl) goldEl.textContent = `Ouro: ${state.gold}`;
+    if (livesEl) livesEl.textContent = `Vidas: ${state.lives}`;
+
+    // Game Over
+    if (state.lives <= 0) {
+      state.running = false;
+      console.info("Game Over");
+      window.dispatchEvent(
+        new CustomEvent("game:over", {
+          detail: {
+            reason: "no_lives",
+            finalScore:
+              typeof waveManager?.calculateScore === "function"
+                ? waveManager.calculateScore(state)
+                : 0,
+          },
+        })
+      );
+    }
+  }
+
+  function render(ctx) {
+    ctx.clearRect(0, 0, state.cssW, state.cssH);
+
+    // Fundo base (grama)
+    ctx.fillStyle = GAME_CONFIG.visual?.backgroundColor || "#2d5016";
+    ctx.fillRect(0, 0, state.cssW, state.cssH);
+
+    // Textura de grama sutil
+    ctx.save();
+    ctx.globalAlpha = 0.1;
+    for (let i = 0; i < 50; i++) {
+      ctx.fillStyle = "#228b22";
+      const x = Math.random() * state.cssW;
+      const y = Math.random() * state.cssH;
+      ctx.fillRect(x, y, 2, 8);
+    }
+    ctx.restore();
+
+    drawGrid(ctx);
+    renderDecorations(ctx);
+    renderPath(ctx, state.pathPoints);
+    renderBase(ctx, state.base);
+    for (const t of state.towers) t.draw(ctx);
+    // Desenhar efeitos de clima nas torres
+    for (const tower of state.towers) {
+      drawWeatherEffectOnTower(ctx, tower, state.activeWeatherEffect);
+    }
+
+    renderTowerGhost(ctx);
+    for (const e of state.enemies) e.draw(ctx);
+
+    // Desenhar projéteis e efeitos se existirem
+    for (const p of state.projectiles) {
+      if (p && typeof p.draw === "function") p.draw(ctx);
+    }
+    for (const ef of state.effects) {
+      if (ef && typeof ef.draw === "function") ef.draw(ctx);
+    }
+
+    // ADICIONE AQUI: Desenhar overlay de clima
+    if (weatherOverlay) {
+      weatherOverlay.draw(ctx);
+    }
+
+    if (!state.running) {
+      ctx.save();
+      ctx.fillStyle = "rgba(0,0,0,0.5)";
+      ctx.fillRect(0, 0, state.cssW, state.cssH);
+
+      ctx.fillStyle = "#fff";
+      ctx.font = `${
+        Math.min(state.cssW, state.cssH) / 25
+      }px Inter, Arial, sans-serif`;
+      ctx.textAlign = "center";
+      ctx.fillText("PAUSADO / GAME OVER", state.cssW / 2, state.cssH / 2);
+      ctx.restore();
+    }
+  }
+
+  function draw() {
+    render(ctx);
+  }
+
+  // ==========================================================
+  // UTILIDADES
+  // ==========================================================
+
+  function flashMessage(msg, ms = 1500) {
+    let el = document.getElementById("engine-msg");
+    if (!el) {
+      el = document.createElement("div");
+      el.id = "engine-msg";
+      Object.assign(el.style, {
+        position: "fixed",
+        right: "20px",
+        top: "100px",
+        padding: "12px 16px",
+        background: "rgba(17,24,39,0.95)",
+        color: "#fff",
+        borderRadius: "8px",
+        zIndex: "9999",
+        fontSize: "14px",
+        fontFamily: "Inter, Arial, sans-serif",
+        boxShadow: "0 4px 12px rgba(0,0,0,0.3)",
+        transition: "opacity 0.3s ease",
+      });
+      document.body.appendChild(el);
+    }
+
+    el.textContent = msg;
+    el.style.opacity = "1";
+    clearTimeout(el._timeout);
+    el._timeout = setTimeout(() => {
+      el.style.opacity = "0";
+    }, ms);
+  }
+
+  // ==========================================================
+  // SISTEMA DE REDIMENSIONAMENTO
+  // ==========================================================
+
+  let resizeTimeout;
+  function handleResize() {
+    clearTimeout(resizeTimeout);
+    resizeTimeout = setTimeout(() => {
+      state.needsRecalc = true;
+    }, 150);
+  }
+
+  window.addEventListener("resize", handleResize);
+
+  window.addEventListener("beforeunload", () => {
+    window.removeEventListener("resize", handleResize);
+  });
+
+  // ==========================================================
+  // GAME LOOP PRINCIPAL
+  // ==========================================================
+
+  let last = performance.now();
+
+  function gameLoop(now) {
+    const dt = Math.min((now - last) / 1000, 1 / 30);
+    last = now;
+
+    update(dt);
+    draw();
+
+    if (state.running) {
+      rafId = requestAnimationFrame(gameLoop);
+    }
+  }
+
+  // Iniciar o loop
+  rafId = requestAnimationFrame(gameLoop);
+
+  return GameAPI;
+}
