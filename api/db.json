@@ -1,0 +1,9 @@
+{
+  "waves": [
+    { "id": 1, "enemies": [{ "type": "basic", "count": 6 }], "goldReward": 50 },
+    { "id": 2, "enemies": [{ "type": "fast", "count": 8 }], "goldReward": 80 },
+    { "id": 3, "enemies": [{ "type": "tank", "count": 4 }], "goldReward": 120 },
+    { "id": 4, "enemies": [{ "type": "basic", "count": 6 }], "goldReward": 50 }
+  ],
+  "scores": [{ "id": 1, "player": "Rex", "score": 4520 }]
+}

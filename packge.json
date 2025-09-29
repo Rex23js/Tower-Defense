@@ -1,0 +1,10 @@
+{
+  "name": "tower-defense",
+  "version": "0.1.0",
+  "scripts": {
+    "api": "json-server --watch api/db.json --port 3000"
+  },
+  "devDependencies": {
+    "json-server": "^0.17.1"
+  }
+}
