@@ -778,6 +778,7 @@ export async function initEngine(canvas) {
     waves: [],
     running: true,
     selectedTowerType: null,
+    selectedTower: null,
     mouse: { x: 0, y: 0, isValid: false },
     canvas,
     waypoints: initialWaypoints,
@@ -851,9 +852,27 @@ export async function initEngine(canvas) {
   }
 
   function handleClick(e) {
-    if (!state.selectedTowerType) return;
-
     const { x: mx, y: my } = getMousePos(canvas, e);
+
+    // Se NÃO está no modo de construção, verificar clique em torres existentes
+    if (!state.selectedTowerType) {
+      // Procurar torre clicada
+      const clickedTower = state.towers.find(
+        (t) => Math.hypot(t.x - mx, t.y - my) <= t.size / 2
+      );
+
+      if (clickedTower) {
+        // Toggle: se já estava selecionada, desseleciona
+        state.selectedTower =
+          state.selectedTower === clickedTower ? null : clickedTower;
+      } else {
+        // Clique vazio desseleciona
+        state.selectedTower = null;
+      }
+      return;
+    }
+
+    // Modo construção: lógica existente
     const config = GAME_CONFIG.towerTypes[state.selectedTowerType];
     if (!config) return;
 
@@ -888,8 +907,10 @@ export async function initEngine(canvas) {
     state.gold -= config.cost;
     const tower = new Tower(mx, my, state.selectedTowerType);
     state.towers.push(tower);
-  }
 
+    // Desselecionar tipo de torre após construir
+    state.selectedTowerType = null;
+  }
   canvas.addEventListener("mousemove", handleMouseMove);
   canvas.addEventListener("mouseleave", handleMouseLeave);
   canvas.addEventListener("click", handleClick);
@@ -1425,23 +1446,34 @@ export async function initEngine(canvas) {
 
     state.mouse.isValid = !isInvalidPath && !isInvalidTower && !isInvalidBase;
 
-    const color = state.mouse.isValid
-      ? "rgba(0, 255, 0, 0.3)"
-      : "rgba(255, 0, 0, 0.3)";
+    // Cor baseada na validade (verde = válido, vermelho = inválido)
+    const rangeColor = state.mouse.isValid
+      ? "rgba(255, 255, 255, 1)"
+      : "rgba(255, 0, 0, 1)";
+    const borderColor = state.mouse.isValid
+      ? "rgba(255, 255, 255, 1)"
+      : "rgba(255, 0, 0, 1)";
 
-    const GHOST_RANGE_SCALE = GAME_CONFIG.visual?.ghostRangeScale ?? 0.6;
-    const GHOST_BODY_SCALE = GAME_CONFIG.visual?.ghostBodyScale ?? 0.25;
-
-    const rangeSide = config.range * 1 * GHOST_RANGE_SCALE;
-    const ghostSize = config.size * GHOST_BODY_SCALE;
+    const ghostSize = config.size * 0.25;
     const halfGhost = ghostSize / 2;
 
+    // Desenhar área de alcance CIRCULAR
     ctx.save();
-    ctx.globalAlpha = 1.0;
-    ctx.fillStyle = color;
-    ctx.fillRect(mx - rangeSide / 2, my - rangeSide / 2, rangeSide, rangeSide);
+    ctx.globalAlpha = 0.3;
+    ctx.fillStyle = rangeColor;
+    ctx.beginPath();
+    ctx.arc(mx, my, config.range, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Borda do alcance
+    ctx.strokeStyle = borderColor;
+    ctx.lineWidth = 2;
+    ctx.setLineDash([5, 5]);
+    ctx.stroke();
+    ctx.setLineDash([]);
     ctx.restore();
 
+    // Desenhar corpo da torre (preview menor)
     ctx.save();
     ctx.globalAlpha = 0.7;
     ctx.fillStyle = config.color || "#999";
@@ -1451,7 +1483,6 @@ export async function initEngine(canvas) {
     ctx.strokeRect(mx - halfGhost, my - halfGhost, ghostSize, ghostSize);
     ctx.restore();
   }
-
   // ==========================================================
   // UPDATE E RENDER (CORRIGIDOS)
   // ==========================================================
@@ -1629,6 +1660,50 @@ export async function initEngine(canvas) {
     renderPath(ctx, state.pathPoints);
     renderBase(ctx, state.base);
     for (const t of state.towers) t.draw(ctx);
+
+    for (const t of state.towers) t.draw(ctx);
+
+    // Mostrar alcance da torre selecionada com clique
+    if (state.selectedTower && !state.selectedTowerType) {
+      ctx.save();
+
+      // Círculo de alcance preenchido
+      ctx.globalAlpha = 0.15;
+      ctx.fillStyle = "rgba(255, 255, 255, 0.2)";
+      ctx.beginPath();
+      ctx.arc(
+        state.selectedTower.x,
+        state.selectedTower.y,
+        state.selectedTower.range,
+        0,
+        Math.PI * 2
+      );
+      ctx.fill();
+
+      // Borda do círculo
+      ctx.globalAlpha = 0.6;
+      ctx.strokeStyle = "#ffffff";
+      ctx.lineWidth = 2;
+      ctx.setLineDash([8, 4]);
+      ctx.stroke();
+      ctx.setLineDash([]);
+
+      // Indicador visual na torre selecionada
+      ctx.globalAlpha = 0.8;
+      ctx.strokeStyle = "#20cb31ff";
+      ctx.lineWidth = 3;
+      ctx.strokeRect(
+        state.selectedTower.x - state.selectedTower.size / 2,
+        state.selectedTower.y - state.selectedTower.size / 2,
+        state.selectedTower.size,
+        state.selectedTower.size
+      );
+
+      ctx.restore();
+    }
+
+    // Desenhar efeitos de clima nas torres
+
     // Desenhar efeitos de clima nas torres
     for (const tower of state.towers) {
       drawWeatherEffectOnTower(ctx, tower, state.activeWeatherEffect);
