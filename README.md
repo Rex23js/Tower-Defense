@@ -120,10 +120,7 @@ https://thetowerdefense.netlify.app/
 - **Paleta de Cores Consistente:** Design system definido em CSS variables
 - **Animações Suaves:** Transições e efeitos visuais polidos
 
-### 3. Wireframe e Conceito Visual:
-
-![Wireframe principal](wireframe/Frame.png)
-
+### 3. Conceito Visual:
 
 **Mapa Mental do Projeto:**
 ```
