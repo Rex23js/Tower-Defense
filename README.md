@@ -2,98 +2,109 @@
 
 ![Status do Projeto](https://img.shields.io/badge/status-v1.0--alpha-yellow) ![License](https://img.shields.io/badge/license-MIT-blue)
 
-> Um projeto de demonstração acadêmica de um jogo Tower Defense construído com **Vanilla JS**, Canvas API e integração com APIs externas.
+> Jogo Tower Defense criado com HTML, CSS e JavaScript puro. Projeto focado em mecânicas clássicas, acessibilidade e experiência de usuário.
+
+---
+
+## Link do Projeto (deploy)
+> https://thetowerdefense.netlify.app/
+
 
 ---
 
 ## Índice
 
-1. [Visão Geral e Justificativa](#visão-geral-e-justificativa)
-2. [Funcionalidades Implementadas](#funcionalidades-implementadas)
-3. [Arquitetura do Projeto](#arquitetura-do-projeto)
-4. [Sistema de Clima Dinâmico](#sistema-de-clima-dinâmico)
-5. [Tecnologias Utilizadas](#tecnologias-utilizadas)
-6. [APIs e Integrações](#apis-e-integrações)
-7. [Estrutura do Repositório](#estrutura-do-repositório)
-8. [Como Executar o Projeto (Local)](#como-executar-o-projeto-local)
-9. [Roadmap / Próximas Implementações](#roadmap--próximas-implementações)
-10. [Como Contribuir](#como-contribuir)
-11. [Autores](#autores)
+1. [Visão Geral e Justificativa](#visão-geral-e-justificativa)  
+2. [Conceito e Temática](#conceito-e-temática)  
+3. [Funcionalidades Implementadas & Planejadas](#funcionalidades-implementadas--planejadas)  
+4. [Wireframes](#wireframes)  
+5. [Arquitetura e Estrutura do Projeto](#arquitetura-e-estrutura-do-projeto)  
+6. [Tecnologias Utilizadas](#tecnologias-utilizadas)  
+7. [APIs e Integrações](#apis-e-integrações)  
+8. [Como Executar o Projeto (Local)](#como-executar-o-projeto-local)  
+9. [Roadmap / Próximas Implementações](#roadmap--próximas-implementações)  
+10. [Como Contribuir](#como-contribuir)  
+11. [Autores](#autores)  
 12. [Licença](#licença)
 
 ---
 
 ## Visão Geral e Justificativa
 
-**Visão Geral.** "Tower Defense Acadêmico" é uma Single Page Application (SPA) que simula um jogo de defesa por torres onde o jogador posiciona torres para deter ondas de inimigos. O foco deste repositório é demonstrar: arquitetura modular em JavaScript, uso da Canvas API para renderização 2D, integração com APIs externas e um sistema de eventos para desacoplar UI e lógica de jogo.
+**Visão Geral.** Projeto acadêmico que implementa um jogo Tower Defense como uma Single Page Application (SPA). O objetivo técnico é demonstrar arquitetura modular em JavaScript, uso da Canvas API, integração com APIs externas e boas práticas de separação de responsabilidades.
 
-**Justificativa.** O projeto é ideal para estudos e avaliação técnica — aborda temas como design de motor de jogo, balanceamento via arquivo de configuração, testes locais com JSON Server e manejo de falhas ao consumir APIs externas.
-
----
-
-## Funcionalidades Implementadas
-
-* **Sistema de Ondas** com 12 ondas configuráveis via `db.json` (JSON Server).
-* **6 tipos de torres** (Básica, Perfurante, Área, Lentidão, Antiaérea, Boss Killer) com atributos e custo balanceáveis em `game-config.js`.
-* **5 tipos de inimigos**, incluindo um *boss* com atributos especiais.
-* **Sistema de Clima Dinâmico** que consome Open-Meteo e aplica debuffs no jogo.
-* **Efeitos visuais** (chuva, neblina, tempestade) renderizados com sistema de partículas no canvas.
-* **UI desacoplada**: `ui.js` escuta eventos do `WaveManager` e atualiza HUD (vida, ouro, onda).
-* **SPA** com roteamento por hash (`#home`, `#game`, `#victory`).
-* **Modo desenvolvedor**: painel de debug para forçar clima, ondas ou atributos.
-* **Design responsivo** adaptado para desktop e tablets (mobile com limitações devido ao canvas).
+**Justificativa.** Ferramenta de aprendizado e portfólio — combina lógica de jogo, balanceamento via configuração (`game-config.js`), e manejo de falhas ao consumir APIs externas (ex.: Open-Meteo).
 
 ---
 
-## Arquitetura do Projeto
+## Conceito e Temática
 
-Arquitetura modular em arquivos JS separados para manter separação de responsabilidades (SoC):
-
-* `main.js` — controlador da aplicação e roteamento.
-* `engine.js` — game loop, render e gestão de entidades.
-* `wave-manager.js` — emissor de eventos que gerencia as ondas.
-* `ui.js` — manipulação do DOM e reatividade da interface.
-* `entities.js` — classes `Tower`, `Enemy`, `Projectile` e lógica de combate.
-* `game-config.js` — arquivo de balanceamento (torres, inimigos, ondas).
-* `api.js` — abstração das chamadas à API local (`JSON Server`) e Open-Meteo.
+Mistura de fantasia medieval com elementos pós-apocalípticos. O jogador posiciona torres em pontos estratégicos do mapa para impedir ondas de inimigos. A estética busca ser clara e funcional, com forte atenção à legibilidade e acessibilidade.
 
 ---
 
-## Sistema de Clima Dinâmico
+## Funcionalidades Implementadas & Planejadas
 
-* **Fonte de dados:** Open-Meteo (código do clima / weathercode).
-* **Fallback seguro:** `safeGetWeather()` — caso a requisição falhe, aplica clima padrão para evitar travamentos.
-* **Impactos no gameplay:**
+### Implementadas (v1.0)
+- Sistema de ondas (12 ondas configuráveis via `db.json`).
+- 6 tipos de torres (Básica, Perfurante, Área, Lentidão, Antiaérea, Boss Killer).
+- 5 tipos de inimigos, incluindo boss.
+- Sistema de clima dinâmico (integração com Open-Meteo) com efeitos visuais e debuffs.
+- UI desacoplada (event-driven): HUD, seleção de torre e painel de desenvolvedor.
+- SPA com roteamento por hash (`#home`, `#game`, `#victory`).
 
-  * *Neblina*: reduz alcance das torres.
-  * *Chuva / Tempestade*: reduz cadência de tiro (fire rate).
-* **Visuals**: partículas e shaders simples desenhados no canvas para chuva e neblina.
-
----
-
-## Tecnologias Utilizadas
-
-* **HTML5**, **CSS3**, **JavaScript (ES6+)**
-* **Canvas API** para renderização do jogo
-* **JSON Server** para mock de API local (`db.json`)
-* **Git / GitHub** para versionamento
-* Ferramentas: VS Code, Live Server
+### Planejadas
+- Sistema de poderes: Veneno (Poison), Gelo (Ice), Fogo (Fire).
+- Sistema de upgrades para torres.
+- Efeitos sonoros e música de fundo.
+- Sistema de pontuação e ranking persistido.
+- Múltiplos mapas e possibilidade de multiplayer local.
 
 ---
 
-## APIs e Integrações
+## Wireframes
 
-* **JSON Server (Local)** — fornece as ondas e dados do jogo a partir de `db.json`.
-* **Open-Meteo (Externa)** — fornece condições meteorológicas para modificar mecânicas.
+> Coloque imagens exportadas do Excalidraw ou screenshots aqui. Você pode usar imagens locais (no repositório, pasta `wireframes/`) ou URLs públicas.
 
-> Nota: As chamadas externas são encapsuladas em `api.js` — trate chaves e limites com cuidado.
+### Como adicionar imagens ao repositório
+1. Exporte do Excalidraw como PNG/SVG.  
+2. Crie a pasta `wireframes/` na raiz e mova as imagens:
+```bash
+mkdir -p wireframes
+mv ~/Downloads/Wireframe_home.png wireframes/wireframe-home.png
+mv ~/Downloads/Wireframe_game.png wireframes/wireframe-game.png
+git add wireframes/
+git commit -m "docs: add wireframe images"
+git push origin <sua-branch>
+Exibição (substitua os placeholders)
+<p align="center"> <a href="WIRE_FRAME_HOME_FULL_URL_OR_PATH" target="_blank"> <img src="WIRE_FRAME_HOME_THUMB_URL_OR_PATH" alt="Wireframe - Home" width="520" style="margin-right:18px;" /> </a> <a href="WIRE_FRAME_GAME_FULL_URL_OR_PATH" target="_blank"> <img src="WIRE_FRAME_GAME_THUMB_URL_OR_PATH" alt="Wireframe - Jogo" width="520" /> </a> </p> <details> <summary><strong>Como usar URLs públicas</strong></summary>
+Para imagens hospedadas no GitHub (raw):
+https://raw.githubusercontent.com/SEU-USER/REPO/main/wireframes/wireframe-home.png
 
----
+Para thumbnails, use uma versão menor como wireframes/wireframe-home-thumb.png no src e a full-size no href.
 
-## Estrutura do Repositório
+</details>
+Arquitetura e Estrutura do Projeto
+Arquitetura modular com separação clara de responsabilidades:
 
-```
-/tower-defense-game
+main.js — roteamento e ciclo de vida da aplicação.
+
+engine.js — game loop, render e gestão de entidades.
+
+wave-manager.js — controle de ondas e emissão de eventos.
+
+ui.js — DOM, HUD e interação do jogador.
+
+entities.js — classes Tower, Enemy, Projectile, etc.
+
+game-config.js — balanceamento (torres, inimigos, ondas).
+
+api.js — abstração para JSON Server e Open-Meteo.
+
+Estrutura sugerida
+arduino
+Copiar código
+/projeto-tower-defense
 ├── css/
 │   └── style.css
 ├── js/
@@ -104,95 +115,77 @@ Arquitetura modular em arquivos JS separados para manter separação de responsa
 │   ├── main.js
 │   ├── ui.js
 │   └── wave-manager.js
+├── wireframes/
+│   ├── wireframe-home.png
+│   └── wireframe-game.png
+├── assets/
+│   └── images/
 ├── index.html
 ├── db.json
 └── README.md
-```
+Tecnologias Utilizadas
+HTML5 (semântico)
 
----
+CSS3 (responsividade e animações leves)
 
-## Como Executar o Projeto (Local)
+JavaScript (ES6+, Canvas API)
 
-### Pré-requisitos
+JSON Server (mock local)
 
-* Node.js (v14+ recomendado)
-* npm (ou yarn)
-* Live Server (opcional, extensão do VS Code)
+Git / GitHub (versionamento)
 
-### Passos
+Ferramentas: VS Code, Live Server
 
-1. Clone o repositório
+APIs e Integrações
+Open-Meteo — clima para efeitos dinâmicos (weathercode).
 
-```bash
-git clone https://github.com/seu-usuario/seu-repositorio.git
-cd seu-repositorio
-```
+JSON Server — mock local para ondas e dados (db.json).
 
-2. Instale o JSON Server (se não quiser instalar globalmente use `npx`)
+Em produção estática, recomendamos servir db.json como arquivo estático ou via serverless function (Netlify/Vercel) para evitar dependência de um processo json-server contínuo.
 
-```bash
-npm install -g json-server   # opcional
-# ou
-npx json-server --watch db.json
-```
+Como Executar o Projeto (Local)
+Pré-requisitos
+Node.js (v14+ recomendado)
 
-3. Inicie o servidor local (default `http://localhost:3000`)
+npm (ou yarn)
 
-```bash
+Live Server (recomendado)
+
+Passos
+bash
+Copiar código
+git clone https://github.com/SEU-USER/REPO.git
+cd REPO
+# se usar JSON Server
 npx json-server --watch db.json --port 3000
-```
+# abra index.html no navegador (ou use Live Server)
+Em modo desenvolvimento, use a tecla de debug (ex.: D) para forçar clima/ondas.
 
-4. Abra `index.html` com Live Server ou abra diretamente no navegador (use Live Server para evitar problemas de CORS ao consumir APIs locais)
+Roadmap / Próximas Implementações
+ Sistema de pontuação e ranking persistido.
 
-5. Jogar! Use o painel de desenvolvedor (tecla `D` por padrão) para forçar clima/ondas e testar balanceamento.
+ Efeitos sonoros e trilha.
 
----
+ Sistema de upgrades e balanceamento refinado.
 
-## Roadmap / Próximas Implementações
+ Mais mapas e modos de jogo.
 
-* [ ] Sistema de pontuação e ranking persistido na API local
-* [ ] Efeitos sonoros para seleções, tiros e mortes
-* [ ] Sistema de upgrades inline para torres
-* [ ] Múltiplos mapas e caminhos alternativos
-* [ ] Modo cooperativo local (2 jogadores)
-* [ ] Exportar estatísticas para CSV / Google Sheets
+ Endpoint REST via serverless (Netlify/Vercel) para dados em produção.
 
----
+Como Contribuir
+Fork o repositório.
 
-## Como Contribuir
+Crie uma branch: git checkout -b feature/nome-da-feature.
 
-1. Fork este repositório
-2. Crie uma branch: `git checkout -b feature/nome-da-feature`
-3. Faça commits claros: `git commit -m "feat: descreva a mudança"`
-4. Push para a branch: `git push origin feature/nome-da-feature`
-5. Abra um Pull Request descrevendo as mudanças
+Commit: git commit -m "feat: descrição da feature".
 
-Sugestões rápidas: mantenha o `game-config.js` como fonte de verdade para balanceamento e adicione testes manuais no modo desenvolvedor.
+Push: git push origin feature/nome-da-feature.
 
----
+Abra um Pull Request com descrição das mudanças e testes realizados.
 
-## Autores
+Autores
+<table align="center"> <tr> <td align="center"> <a href="https://github.com/SEU-USER-ISMAEL"> <img src="https://avatars.githubusercontent.com/u/200134059?v=4" width="96" alt="Ismael" /> <br/> <sub><b>Ismael Gomes (Rex)</b></sub> </a> </td> <td align="center"> <a href="https://github.com/SEU-USER-EDUARDO"> <img src="https://avatars.githubusercontent.com/u/202681925?v=4" width="96" alt="Eduardo" /> <br/> <sub><b>Eduardo Monteiro</b></sub> </a> </td> </tr> </table>
+Licença
+Este projeto está licenciado sob a MIT License. Veja o arquivo LICENSE para detalhes.
 
-<table align="center">
-  <tr>
-    <td align="center">
-      <img src="https://avatars.githubusercontent.com/u/200134059?v=4" width="96" alt="Ismael" />
-      <br/>
-      <sub><b>Ismael Gomes (Rex)</b></sub>
-    </td>
-    <td align="center">
-      <img src="https://avatars.githubusercontent.com/u/202681925?v=4" width="96" alt="Eduardo" />
-      <br/>
-      <sub><b>Eduardo Monteiro</b></sub>
-    </td>
-  </tr>
-
-</table>
-
-## Licença
-
-Este projeto está licenciado sob a **MIT License**. Veja o arquivo `LICENSE` para detalhes.
-
----
-
-> Feito com muito café, debugging às 3 da manhã e uma pitada de sarcasmo.
+Feito com dedicação, café e debugging às horas impróprias.
