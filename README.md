@@ -122,7 +122,7 @@ https://thetowerdefense.netlify.app/
 
 ### 3. Wireframe e Conceito Visual:
 
-![Wireframe principal (Frame)](wireframe/Frame.png)
+![Wireframe principal](wireframe/Frame.png)
 
 
 **Mapa Mental do Projeto:**
