@@ -1,7 +1,7 @@
 # Doitly - Gerenciador de Hábitos Diários
 
 <div align="center">
-  <img src="C:\xampp\htdocs\ProjetoFullstack\public\assets\img\logo.png" alt="Doitly Logo" width="120"/>
+  <img src="C:\xampp\htdocs\ProjetoFullstack\public\assets\img\logo.PNG" alt="Doitly Logo" width="120"/>
   
   ### Transforme seus objetivos em hábitos consistentes
   
