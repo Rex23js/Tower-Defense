@@ -1,382 +1,507 @@
-# Tower Defense Acadêmico 🎯
+# Doitly - Gerenciador de Hábitos Diários
 
-![Status do Projeto](https://img.shields.io/badge/versão-v1.0--alpha-yellow)
-![License](https://img.shields.io/badge/license-MIT-blue)
-
-Bem-vindo ao "Tower Defense Acadêmico", um jogo de defesa por torres desenvolvido com JavaScript puro, Canvas API e integração com APIs externas. Este projeto demonstra arquitetura modular, mecânicas de jogo balanceadas e um sistema de clima dinâmico que afeta o gameplay.
-
-O foco é apresentar boas práticas de engenharia de software front-end, incluindo separação de responsabilidades, tratamento de erros, e uma experiência de usuário fluida e acessível.
-
-# Link do Projeto Em Deploy
-
-https://thetowerdefense.netlify.app/
-
-## Índice
-
-1. [Visão Geral](#1-visão-geral)
-2. [Funcionalidades da Versão Atual (v1.0-alpha)](#2-funcionalidades-da-versão-atual-v10-alpha)
-3. [Wireframe e Conceito Visual](#3-wireframe-e-conceito-visual)
-4. [Tecnologias Utilizadas](#4-tecnologias-utilizadas)
-5. [APIs Integradas](#5-apis-integradas)
-6. [Estrutura do Projeto](#6-estrutura-do-projeto)
-7. [Versionamento com Git](#7-versionamento-com-git)
-8. [Acessibilidade e Responsividade](#8-acessibilidade-e-responsividade)
-9. [Sistema de Clima Dinâmico](#9-sistema-de-clima-dinâmico)
-10. [Como Executar o Projeto](#10-como-executar-o-projeto)
+<div align="center">
+  <img src="public/assets/img/logo.png" alt="Doitly Logo" width="120"/>
+  
+  ### Transforme seus objetivos em hábitos consistentes
+  
+  [![PHP](https://img.shields.io/badge/PHP-8.0+-777BB4?style=flat&logo=php&logoColor=white)](https://www.php.net/)
+  [![MySQL](https://img.shields.io/badge/MySQL-8.0+-4479A1?style=flat&logo=mysql&logoColor=white)](https://www.mysql.com/)
+  [![Bootstrap](https://img.shields.io/badge/Bootstrap-5.3.2-7952B3?style=flat&logo=bootstrap&logoColor=white)](https://getbootstrap.com/)
+  [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
+</div>
 
 ---
 
-### 1. Visão Geral e Justificativa
+## 📋 Índice
 
-**Visão Geral:** O "Tower Defense Acadêmico" é uma Single Page Application (SPA) que simula um jogo de defesa por torres onde o jogador posiciona torres estrategicamente para deter ondas de inimigos. O projeto integra dados de APIs externas, apresenta mecânicas de jogo balanceadas e oferece uma experiência visual rica através da Canvas API.
+- [Sobre o Projeto](#-sobre-o-projeto)
+- [Tecnologias Utilizadas](#-tecnologias-utilizadas)
+- [Funcionalidades](#-funcionalidades)
+- [Arquitetura](#-arquitetura)
+- [Instalação e Execução](#-instalação-e-execução)
+- [Estrutura do Projeto](#-estrutura-do-projeto)
+- [Design System](#-design-system)
+- [Roadmap](#-roadmap)
+- [Equipe](#-equipe)
 
-**Justificativa:** Este projeto foi escolhido pela oportunidade de trabalhar com desafios técnicos completos, incluindo:
-- Implementação de um game loop otimizado
-- Arquitetura modular e desacoplada (event-driven)
-- Integração com APIs externas (Open-Meteo para clima)
-- Sistema de balanceamento configurável
-- Renderização 2D com Canvas API
-- Gestão de estado complexo
-- Prática de fluxo Git Flow profissional
+---
 
-### 2. Funcionalidades da Versão Atual (v1.0-alpha)
+## 🎯 Sobre o Projeto
 
-#### **Mecânicas de Jogo**
-- **Sistema de Ondas:** 12 ondas progressivas com dificuldade crescente, configuráveis via `db.json` ou fallback local
-- **Sistema de Torres:**
-  - 4 tipos de torres com características únicas (Básica, Rápida, Sniper, Mágica)
-  - Sistema de cooldown e targeting inteligente
-  - Limites configuráveis por tipo de torre
-  - Visualização de alcance e status
-- **Sistema de Inimigos:**
-  - 6 tipos diferentes: Básico, Rápido, Tanque, Enxame, Voador e Boss
-  - Atributos balanceados (velocidade, HP, recompensa em ouro)
-  - Sistema de pathing suave usando Catmull-Rom splines
-- **Economia de Jogo:**
-  - Sistema de ouro para compra de torres
-  - Recompensas por onda completada
-  - Recompensas por inimigos derrotados
+**Doitly** é um gerenciador de hábitos diários moderno e minimalista, desenvolvido para ajudar pessoas a criar rotinas consistentes e acompanhar seu progresso ao longo do tempo. Com design inspirado na simplicidade da Apple e efeitos glassmorphism, o Doitly oferece uma experiência visual agradável e intuitiva.
 
-#### **Sistema de Clima Dinâmico**
-- **Integração com Open-Meteo API:** Clima real que afeta as mecânicas do jogo
-- **Efeitos Visuais:**
-  - Sistema de partículas para chuva, neblina e tempestade
-  - Overlay visual dinâmico no canvas
-  - Transições suaves entre estados climáticos
-- **Impacto no Gameplay:**
-  - **Neblina:** Reduz alcance das torres avançadas em 25%
-  - **Chuva:** Reduz cadência de tiro das torres básicas em 10%
-  - **Tempestade:** Reduz cadência de todas as torres
-- **Indicadores Visuais:**
-  - Ícones de debuff nas torres afetadas
-  - Anéis comparativos (alcance base vs atual)
-  - Barras de duração para efeitos temporários
-  - Status do clima na HUD
+### Problema que Resolve
 
-#### **Interface e Experiência**
-- **Loja de Torres:** Sistema de abas categorizadas com informações detalhadas
-- **HUD Dinâmica:** 
-  - Contador de ouro, vidas e wave atual
-  - Contador de inimigos restantes
-  - Status do clima em tempo real
-- **Controles de Jogo:**
-  - Pausar/Retomar partida
-  - Ajuste de velocidade (1x, 2x, 3x)
-  - Sistema de ondas automáticas
-  - Modo desenvolvedor com painel de debug
-- **Feedback Visual:**
-  - Ghost da torre durante posicionamento
-  - Validação visual de posicionamento (verde/vermelho)
-  - Linhas de targeting para torres
-  - Barras de HP dos inimigos
-  - Cooldown visual nas torres
+Muitas pessoas têm dificuldade em manter hábitos consistentes devido à falta de acompanhamento visual e organização. O Doitly resolve isso fornecendo:
 
-#### **Navegação e Rotas**
-- **Home (`#/`):** Tela inicial com apresentação do jogo
-- **Jogo (`#/game`):** Interface principal de gameplay
-- **Vitória (`#/victory`):** Tela de vitória com estatísticas finais
-- **Ranking (`#/scores`):** Sistema de pontuação (preparado para persistência)
+- ✅ Interface intuitiva para gerenciar hábitos diários
+- 📊 Visualização de progresso e estatísticas
+- 🎯 Sistema de marcação simples e rápido
+- 📈 Acompanhamento de streaks (sequências)
+- 🔔 Organização por categorias e horários
 
-#### **Recursos Técnicos**
-- **Arquitetura Modular:** Separação clara entre engine, UI, entidades e configuração
-- **Sistema de Eventos:** Comunicação desacoplada entre componentes
-- **Tratamento de Erros:** Fallbacks seguros para APIs externas
-- **Otimização de Performance:**
-  - Canvas responsivo com ajuste de DPI
-  - Sistema de redimensionamento estável
-  - Recalculação inteligente de paths
+---
 
-#### **Modo Desenvolvedor**
-- **Painel de Debug:** Controle manual do clima para testes
-- **Informações Detalhadas:** Estado do jogo e torres em tempo real
-- **Ativação Persistente:** Configuração salva em localStorage
+## 🛠 Tecnologias Utilizadas
 
-#### **Design e Estética**
-- **Tema Medieval/Fantasia:**
-  - Castelo defendível com torres laterais
-  - Caminho de terra estilizado com marcações
-  - Decorações ambientais (árvores)
-  - Grid sutil de fundo
-- **Paleta de Cores Consistente:** Design system definido em CSS variables
-- **Animações Suaves:** Transições e efeitos visuais polidos
+### Frontend
+- **HTML5** - Estrutura semântica moderna
+- **CSS3** - Design System customizado com Glassmorphism
+- **Bootstrap 5.3.2** - Grid responsivo e componentes base
+- **JavaScript (Vanilla)** - Interatividade e consumo de APIs
+- **Google Fonts** - Inter & Plus Jakarta Sans
 
-### 3. Conceito Visual:
+### Backend
+- **PHP 8.0+** - Linguagem server-side
+- **MySQL 8.0+** - Banco de dados relacional
+- **API REST** - Arquitetura de comunicação
+- **Sessions PHP** - Gerenciamento de autenticação
 
-**Mapa Mental do Projeto:**
-```
-ideias do site
-├── tower defense
-│   ├── mecânicas básicas do gênero
-│   │   ├── poderes (gelo, fogo, veneno)
-│   │   └── funções específicas etc
-│   └── temática medieval simplificada
-├── justificativa
-│   └── criação de jogo multiplataforma acessível
-├── wireframe
-│   ├── menu inicial
-│   │   └── botão de início
-│   └── partes do menu
-└── ferramentas de programação
-    ├── CSS
-    └── JavaScript
-```
+### Bibliotecas Futuras
+- **Chart.js** - Visualização de dados e gráficos de progresso
+- **ApexCharts** *(alternativa)* - Gráficos interativos avançados
 
-### 4. Tecnologias Utilizadas
+### Design & UI/UX
+- **Excalidraw** - Wireframes e protótipos
+- **Design System Próprio** - Tokens CSS e componentes reutilizáveis
+- **Glassmorphism UI** - Efeito de vidro com backdrop-filter
 
-- **Frontend:** HTML5, CSS3, JavaScript (ES6+)
-- **Canvas API:** Renderização 2D do jogo
-- **Arquitetura:** SPA com roteamento por hash
-- **Armazenamento:** localStorage para preferências do usuário
-- **Versionamento:** Git / GitHub
-- **Ferramentas de Desenvolvimento:** 
-  - VS Code
-  - Live Server
-  - JSON Server (para desenvolvimento)
+### Ferramentas
+- **Git & GitHub** - Controle de versão
+- **XAMPP/MAMP** - Ambiente de desenvolvimento local
+- **VS Code** - Editor de código
 
-### 5. APIs Integradas
+---
 
-#### **1. Open-Meteo API (Clima)**
-- **Propósito:** Fornecer dados meteorológicos reais que afetam o gameplay
-- **Endpoint:** `https://api.open-meteo.com/v1/forecast`
-- **Dados Utilizados:** `weathercode` (código do clima atual)
-- **Fallback:** Sistema seguro que usa clima padrão em caso de falha
-- **Atualização:** A cada 5 minutos durante o jogo
+## ⚡ Funcionalidades
 
-#### **2. JSON Server (Desenvolvimento Local)**
-- **Propósito:** Mock API para dados de ondas e ranking
-- **Porta Padrão:** `http://localhost:3000`
-- **Endpoints:**
-  - `/waves` - Configuração das ondas
-  - `/scores` - Sistema de ranking
-- **Nota:** Em produção, substituir por endpoint serverless ou arquivo estático
+### ✨ Funcionalidades Atuais
 
-### 6. Estrutura do Projeto
+#### Homepage/Landing Page (index.php)
+- Apresentação visual do produto
+- Seção de serviços principais
+- Demonstração de interface de criação de hábitos
+- Preview de hábitos de exemplo
+- Design responsivo completo
+- Footer com links e redes sociais
+
+#### Design System Completo
+- Sistema de cores e tipografia consistente
+- Componentes reutilizáveis (botões, cards, inputs)
+- Efeitos glassmorphism personalizados
+- Animações e transições suaves
+- Totalmente responsivo (mobile-first)
+
+### 🚧 Em Desenvolvimento
+
+1. **Sistema de Autenticação**
+   - Página de login (login.php) - *em construção*
+   - Página de cadastro (register.php) - *em construção*
+   - Validação de formulários
+   - Sistema de sessões seguro
+
+2. **Dashboard Interativo**
+   - Página principal do usuário (dashboard.php) - *planejado*
+   - Estatísticas em tempo real:
+     - Total de hábitos ativos
+     - Taxa de conclusão diária
+     - Maior streak (sequência)
+   - Cards de métricas visuais
+
+3. **Gerenciamento de Hábitos**
+   - Página de hábitos (habits.php) - *planejado*
+   - CRUD completo (Create, Read, Update, Delete)
+   - Marcação de hábitos concluídos
+   - Organização por categorias
+   - Filtros por horário (manhã, tarde, noite)
+
+4. **Histórico de Progresso**
+   - Página de histórico (history.php) - *planejado*
+   - Visualização de progresso ao longo do tempo
+   - Gráficos com Chart.js
+
+### 📊 Funcionalidades Planejadas
+
+- Gráficos interativos de progresso mensal/anual
+- Sistema de notificações
+- Exportação de dados (PDF/CSV)
+- Gamificação (conquistas e badges)
+- Compartilhamento de progresso
+- Modo escuro
+- Calendário de hábitos
+- Metas semanais e mensais
+
+---
+
+## 🏗 Arquitetura
+
+O projeto segue uma arquitetura **MVC simplificada** adaptada para PHP, com separação clara entre apresentação, lógica de negócio e dados.
+
+### Estrutura Geral
 
 ```
-/tower-defense-game
-├── css/
-│   └── style.css              # Estilos globais e sistema de design
-├── js/
-│   ├── api.js                 # Abstração de chamadas a APIs
-│   ├── engine.js              # Game loop, render e gestão de entidades
-│   ├── entities.js            # Classes Tower e Enemy
-│   ├── game-config.js         # Configuração e balanceamento
-│   ├── main.js                # Roteamento e controle da aplicação
-│   ├── ui.js                  # Manipulação do DOM e eventos
-│   └── wave-manager.js        # Controle de ondas e eventos
-├── api/                       # (Opcional) Dados para JSON Server
-│   └── db.json               # Mock de dados de ondas e scores
-├── wireframes/               # (Opcional) Wireframes do projeto
-├── index.html                # Entrada da aplicação
-├── package.json              # Dependências e scripts
-└── README.md                 # Este arquivo
+┌─────────────────────────┐
+│   Frontend (Cliente)    │
+│   - HTML/CSS/JS         │
+│   - Bootstrap           │
+│   - Design System       │
+└──────────┬──────────────┘
+           │ HTTP Request
+           ▼
+┌─────────────────────────┐
+│   Backend (Servidor)    │
+│   - PHP 8.0+            │
+│   - API REST            │
+│   - Sessions            │
+└──────────┬──────────────┘
+           │ SQL Queries
+           ▼
+┌─────────────────────────┐
+│   Banco de Dados        │
+│   MySQL 8.0+            │
+└─────────────────────────┘
 ```
 
-### 7. Versionamento com Git
+### Fluxo de Navegação Planejado
 
-O projeto utiliza um fluxo de trabalho baseado no **Git Flow**, com as seguintes branches:
-
-- **master (ou main):** Contém o código de produção, estável e pronto para deploy. Cada versão final será marcada com uma `tag` (ex: `v1.0-alpha`).
-- **develop:** Branch principal de desenvolvimento. Novas funcionalidades são integradas aqui antes de irem para a `master`.
-- **feature/\*:** Branches temporárias para desenvolvimento de novas funcionalidades.
-  - Exemplo: `feature/sistema-upgrades`, `feature/efeitos-sonoros`
-
-**Convenção de Commits:**
-- `feat:` Nova funcionalidade
-- `fix:` Correção de bug
-- `refactor:` Refatoração de código
-- `docs:` Atualização de documentação
-- `style:` Mudanças de formatação
-- `test:` Adição ou correção de testes
-
-### 8. Acessibilidade e Responsividade
-
-#### **Responsividade**
-- **Desktop (> 1200px):** Layout lado a lado (loja + jogo)
-- **Tablet (900px - 1200px):** Layout adaptado com loja reduzida
-- **Mobile (< 900px):** Layout vertical com loja colapsável
-- **Canvas Responsivo:** Ajuste automático ao container com DPI otimizado
-
-#### **Acessibilidade**
-- **Navegação por Teclado:** 
-  - Tecla `M` para abrir menu
-  - `ESC` para fechar modais
-  - `Enter` e `Space` para ativar botões
-- **ARIA Labels:** Atributos semânticos para leitores de tela
-- **Contraste:** Paleta de cores com contraste adequado
-- **Focus Indicators:** Indicadores visuais claros para navegação por teclado
-- **Modo Desenvolvedor:** Acessível via toggle nas configurações
-
-### 9. Sistema de Clima Dinâmico
-
-O sistema de clima é um dos diferenciais técnicos do projeto:
-
-#### **Implementação**
-```javascript
-// Códigos de clima do Open-Meteo
-weather: {
-  effects: {
-    clear: { codes: [0,1,2,3], modifiers: [] },
-    fog: { codes: [45,48], modifiers: [
-      { category: "advanced", property: "range", multiplier: 0.75 }
-    ]},
-    rain: { codes: [51,53,55,61,63,65], modifiers: [
-      { category: "basic", property: "fireRate", multiplier: 0.9 }
-    ]},
-    storm: { codes: [95,96,99], modifiers: [
-      { category: "basic", property: "fireRate", multiplier: 0.8 },
-      { category: "advanced", property: "fireRate", multiplier: 0.85 }
-    ]}
-  }
-}
+```
+Homepage (index.php)
+    │
+    ├─→ Login (login.php) ──────→ Dashboard (dashboard.php)
+    │                                  │
+    └─→ Register (register.php) ───────┤
+                                       │
+                                       ├─→ Habits (habits.php)
+                                       │
+                                       └─→ History (history.php)
 ```
 
-#### **Efeitos Visuais**
-- **Sistema de Partículas:** Até 120 partículas simultâneas para tempestades
-- **Tipos de Partículas:**
-  - Chuva: Gotas animadas com velocidade e ângulo
-  - Neblina: Nuvens com gradiente e fade in/out
-  - Tempestade: Chuva intensa com raios ocasionais
-- **Performance:** Otimizado com pooling e culling de partículas
+---
 
-#### **Integração com Gameplay**
-- **Debuffs Dinâmicos:** Aplicados/removidos automaticamente nas torres
-- **Indicadores Visuais:** Ícones e anéis mostram torres afetadas
-- **Fallback Seguro:** Nunca quebra o jogo mesmo se a API falhar
+## 🚀 Instalação e Execução
 
-### 10. Como Executar o Projeto
+### Pré-requisitos
 
-#### **Pré-requisitos**
-- **Node.js** (v14+ recomendado)
-- **npm** ou **yarn**
-- **Live Server** (opcional, mas recomendado)
+- PHP 8.0 ou superior
+- MySQL 8.0 ou superior
+- Apache (XAMPP, MAMP, WAMP, ou similar)
+- Navegador web moderno
 
-#### **Instalação**
+### Passo a Passo
 
-1. **Clone o repositório:**
+1. **Clone o repositório**
 ```bash
-git clone https://github.com/Rex23js/Tower-Defense.git
-cd tower-defense-game
+git clone https://github.com/dedeusgui/ProjetoFullstack.git
+cd ProjetoFullstack
 ```
 
-2. **Instale as dependências (opcional, apenas para JSON Server):**
+2. **Configure o servidor local**
 ```bash
-npm install
+# Mova o projeto para a pasta do seu servidor local
+# XAMPP: C:/xampp/htdocs/
+# MAMP: /Applications/MAMP/htdocs/
 ```
 
-3. **Inicie o JSON Server (desenvolvimento local):**
+3. **Configure o banco de dados** *(em breve)*
 ```bash
-npm run api
-# ou
-npx json-server --watch api/db.json --port 3000
+# As instruções serão adicionadas quando o schema estiver completo
 ```
 
-4. **Abra o projeto:**
-   - **Opção 1 (Recomendada):** Use a extensão Live Server do VS Code
-     - Clique com botão direito em `index.html`
-     - Selecione "Open with Live Server"
-   
-   - **Opção 2:** Abra `index.html` diretamente no navegador
-     - **Nota:** Pode haver problemas com CORS ao acessar APIs locais
-
-#### **Scripts Disponíveis**
-```json
-{
-  "scripts": {
-    "api": "json-server --watch api/db.json --port 3000"
-  }
-}
+4. **Acesse a aplicação**
+```
+http://localhost/ProjetoFullstack/public/
 ```
 
-#### **Modo Desenvolvedor**
-1. Entre no jogo (`#/game`)
-2. Abra o menu de configurações (⚙️)
-3. Ative o toggle "Modo Desenvolvedor"
-4. Use o painel de debug para forçar condições climáticas
+### Executando com servidor PHP embutido
+
+```bash
+cd public
+php -S localhost:8000
+```
+
+Acesse: `http://localhost:8000`
 
 ---
 
-## Roadmap / Próximas Implementações
+## 📁 Estrutura do Projeto
 
-- [ ] Sistema de upgrades inline para torres
-- [ ] Poderes especiais (veneno, gelo, fogo)
-- [ ] Efeitos sonoros e música de fundo
-- [ ] Sistema de ranking persistido (com API em produção)
-- [ ] Múltiplos mapas e caminhos
-- [ ] Modo cooperativo local
-- [ ] Exportação de estatísticas para CSV
-- [ ] Testes automatizados end-to-end
-- [ ] Modo história com narrativa
+```
+ProjetoFullstack/
+│
+├── 📂 actions/                    # Ações do backend (em desenvolvimento)
+│   ├── api_get_habits.php         # GET - Lista hábitos
+│   ├── api_get_stats.php          # GET - Estatísticas
+│   ├── habit_create_action.php    # POST - Criar hábito
+│   ├── habit_update_action.php    # PUT - Atualizar hábito
+│   ├── habit_delete_action.php    # DELETE - Deletar hábito
+│   ├── habit_mark_action.php      # POST - Marcar conclusão
+│   ├── login_action.php           # POST - Autenticação
+│   ├── register_action.php        # POST - Cadastro
+│   └── logout_action.php          # POST - Logout
+│
+├── 📂 config/                     # Configurações (em desenvolvimento)
+│   ├── conexao.php                # Conexão com banco de dados
+│   └── auth.php                   # Middleware de autenticação
+│
+├── 📂 public/                     # Arquivos públicos (frontend)
+│   │
+│   ├── 📂 assets/
+│   │   ├── 📂 css/
+│   │   │   ├── style.css          # ✅ Design System completo
+│   │   │   └── example-bootstrap.html  # Showcase de componentes
+│   │   │
+│   │   ├── 📂 js/
+│   │   │   └── .gitkeep
+│   │   │
+│   │   └── 📂 img/
+│   │       └── logo.png
+│   │
+│   ├── 📂 includes/
+│   │   ├── header.php             # ✅ Header global reutilizável
+│   │   ├── footer.php             # ✅ Footer global reutilizável
+│   │   └── navbar.php             # ✅ Navbar componente
+│   │
+│   ├── index.php                  # ✅ Homepage/Landing page
+│   ├── login.php                  # 🚧 Página de login
+│   ├── register.php               # 🚧 Página de cadastro
+│   ├── dashboard.php              # 🚧 Dashboard principal
+│   ├── habits.php                 # 🚧 Gerenciamento de hábitos
+│   └── history.php                # 🚧 Histórico de progressos
+│
+├── 📂 sql/
+│   └── schema.sql                 # 🚧 Script de criação do banco
+│
+├── 📄 wireframe.png               # ✅ Wireframe do projeto (Excalidraw)
+├── .gitignore
+├── README.md                      # ✅ Este arquivo
+└── LICENSE
+
+Legenda:
+✅ Completo
+🚧 Em desenvolvimento
+📋 Planejado
+```
 
 ---
 
-## Como Contribuir
+## 🎨 Design System
 
-1. **Fork** este repositório
-2. Crie uma branch: `git checkout -b feature/nome-da-feature`
-3. Faça commits claros: `git commit -m "feat: descrição da mudança"`
-4. Push para a branch: `git push origin feature/nome-da-feature`
-5. Abra um **Pull Request** descrevendo as mudanças
+O Doitly possui um Design System completo e moderno, inspirado no design da Apple com efeitos glassmorphism.
 
-**Dicas para Contribuir:**
-- Mantenha o `game-config.js` como fonte de verdade para balanceamento
-- Teste no modo desenvolvedor antes de enviar PR
-- Siga as convenções de código existentes
-- Adicione comentários em lógicas complexas
+### Paleta de Cores
+
+```css
+/* Backgrounds */
+--bg-light: #ffffff
+--bg-body: #f5f7fa
+--bg-darker: #e6e7e9
+
+/* Textos */
+--text-primary: #222222
+--text-secondary: #6c757d
+--text-tertiary: #a0a0a0
+
+/* Accent Colors */
+--accent-blue: #4a74ff      /* Primary */
+--accent-green: #59d186     /* Success */
+--accent-gold: #eed27a      /* Warning */
+--accent-red: #ff5757       /* Danger */
+```
+
+### Tipografia
+
+- **Headings:** Plus Jakarta Sans (Italic, Light/Normal)
+- **Body:** Inter (Normal, 300)
+- **Weights:** 200 (Light), 300 (Normal), 400 (Regular), 500 (Medium), 600 (Semibold)
+
+### Componentes Prontos
+
+✅ **Botões:** Primary, Secondary, Outline, Ghost, Success, Danger  
+✅ **Inputs:** Text, Textarea, Select (com estilos customizados)  
+✅ **Cards:** Glass cards com blur effect  
+✅ **Badges:** Success, Warning, Danger, Info  
+✅ **Navbar:** Fixed top com glassmorphism  
+✅ **Footer:** Responsivo com links sociais  
+✅ **Habit Items:** Lista interativa de hábitos  
+✅ **Stats Cards:** Cards de estatísticas
+
+### Glassmorphism Effects
+
+```css
+/* Light Glass */
+background: rgba(255, 255, 255, 0.08)
+backdrop-filter: blur(10px)
+
+/* Medium Glass */
+background: rgba(255, 255, 255, 0.12)
+backdrop-filter: blur(14px)
+
+/* Strong Glass */
+background: rgba(255, 255, 255, 0.55)
+backdrop-filter: blur(22px)
+```
+
+### Responsividade
+
+- **Mobile First:** < 480px
+- **Tablet:** 768px - 1024px
+- **Desktop:** > 1024px
+
+Todos os componentes são 100% responsivos e otimizados para todos os dispositivos.
 
 ---
 
-## Autores
+## 🗺 Roadmap
 
-<table align="center">
-  <tr>
-    <td align="center">
-      <img src="https://avatars.githubusercontent.com/u/200134059?v=4" width="96" alt="Ismael" />
-      <br/>
-      <sub><b>Ismael Gomes (Rex)</b></sub>
-      <br/>
-      <a href="https://github.com/Rex23js">GitHub</a>
-    </td>
-    <td align="center">
-      <img src="https://avatars.githubusercontent.com/u/202681925?v=4" width="96" alt="Eduardo" />
-      <br/>
-      <sub><b>Eduardo Monteiro</b></sub>
-      <br/>
-      <a href="https://github.com/USUARIO-EDUARDO">GitHub</a>
-    </td>
-  </tr>
-</table>
+### Fase 1: Foundation ✅ (Concluída)
+- [x] Estrutura básica do projeto
+- [x] Design System completo
+- [x] Homepage/Landing page
+- [x] Componentes reutilizáveis
+- [x] Wireframes e protótipos
+
+### Fase 2: Autenticação 🚧 (Em Andamento)
+- [ ] Página de login funcional
+- [ ] Página de registro funcional
+- [ ] Sistema de validação de formulários
+- [ ] Integração com banco de dados
+- [ ] Sistema de sessões PHP
+- [ ] Middleware de autenticação
+
+### Fase 3: Core Features 📋 (Próxima)
+- [ ] Dashboard com estatísticas
+- [ ] CRUD de hábitos completo
+- [ ] Sistema de marcação de conclusão
+- [ ] Página de histórico
+- [ ] Integração das APIs REST
+
+### Fase 4: Data Visualization 📋
+- [ ] Implementação Chart.js
+- [ ] Gráficos de progresso
+- [ ] Calendário de hábitos
+- [ ] Exportação de dados
+
+### Fase 5: Enhancement 📋
+- [ ] Sistema de notificações
+- [ ] Gamificação
+- [ ] Modo escuro
+- [ ] PWA (Progressive Web App)
+
+### Fase 6: Deploy 📋
+- [ ] Configuração de produção
+- [ ] Deploy do frontend
+- [ ] Deploy do backend
+- [ ] Documentação final
+- [ ] Vídeo de apresentação
 
 ---
 
-## Licença
+## 📸 Capturas de Tela
 
-Este projeto está licenciado sob a **MIT License**. Veja o arquivo `LICENSE` para detalhes.
+### Homepage - Acima da Dobra
+> Design moderno com glassmorphism e apresentação clara do produto
+
+### Seção de Serviços
+> Cards apresentando as funcionalidades principais do Doitly
+
+### Preview de Hábitos
+> Interface de exemplo mostrando como será o gerenciamento de hábitos
+
+### Componentes UI
+> Showcase completo de todos os componentes do Design System
+
+*Screenshots serão adicionadas em breve*
+
+---
+
+## 📚 Documentação Adicional
+
+### Para Desenvolvedores
+
+- **Style Guide:** Veja `public/assets/css/example-bootstrap.html` para exemplos de todos os componentes
+- **Wireframes:** Consulte o arquivo `wireframe.png` para referência de layout
+- **CSS Variables:** Todas as variáveis de design estão em `:root` no `style.css`
+
+### Boas Práticas Implementadas
+
+✅ Código semântico e acessível  
+✅ Mobile-first approach  
+✅ Performance otimizada (blur reduzido em mobile)  
+✅ Suporte a prefers-reduced-motion  
+✅ Suporte a high-contrast mode  
+✅ Componentes reutilizáveis  
+✅ Separação de responsabilidades  
+
+---
+
+## 👥 Equipe
+
+- **Guilherme Deus** - [@dedeusgui](https://github.com/dedeusgui) - Frontend & Design
+- **[Nome do Parceiro]** - [@username] - Backend & Database
+
+---
+
+## 🎓 Contexto Acadêmico
+
+Este projeto está sendo desenvolvido como trabalho final da disciplina de Desenvolvimento Fullstack, com o objetivo de demonstrar conhecimentos em:
+
+✅ Desenvolvimento Frontend responsivo com HTML/CSS/JavaScript  
+✅ Design System e UI/UX moderno  
+🚧 Criação de API REST com PHP  
+🚧 Modelagem de banco de dados relacional  
+🚧 Autenticação e autorização  
+✅ Boas práticas de código e organização  
+✅ Versionamento com Git  
+✅ Documentação técnica completa  
+
+### Requisitos do Projeto
+
+**Atendidos:**
+- ✅ Interface responsiva
+- ✅ Componentes reutilizáveis
+- ✅ Boa organização de código
+- ✅ Versionamento Git
+
+**Em Desenvolvimento:**
+- 🚧 Navegação entre páginas
+- 🚧 Consumo de APIs
+- 🚧 Formulários validados
+- 🚧 API REST com CRUD completo
+- 🚧 Autenticação e autorização
+- 🚧 Banco de dados modelado
+
+---
+
+## 📝 Licença
+
+Este projeto está sob a licença MIT. Veja o arquivo [LICENSE](LICENSE) para mais detalhes.
+
+---
+
+## 🔗 Links Úteis
+
+- [Repositório no GitHub](https://github.com/dedeusgui/ProjetoFullstack)
+- [Wireframes no Excalidraw](link-do-excalidraw)
+- [Deploy (em breve)](#)
+
+---
+
+## 📞 Contato
+
+Tem alguma dúvida ou sugestão? Entre em contato!
+
+- **Email:** contato@doitly.com *(exemplo)*
+- **GitHub:** [@dedeusgui](https://github.com/dedeusgui)
 
 ---
 
 <div align="center">
-
-**🎯 Feito com dedicação, café e debugging às 3 da manhã 🎯**
-
+  
+  ### 🌟 Status do Projeto: Em Desenvolvimento Ativo
+  
+  Feito com 💙 por Guilherme Deus e equipe
+  
+  ⭐ Deixe uma estrela se este projeto te interessou!
+  
 </div>
