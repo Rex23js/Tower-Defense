@@ -46,6 +46,7 @@ Muitas pessoas têm dificuldade em manter hábitos consistentes devido à falta 
 ## 🛠 Tecnologias Utilizadas
 
 ### Frontend
+
 - **HTML5** - Estrutura semântica moderna
 - **CSS3** - Design System customizado com Glassmorphism
 - **Bootstrap 5.3.2** - Grid responsivo e componentes base
@@ -53,21 +54,25 @@ Muitas pessoas têm dificuldade em manter hábitos consistentes devido à falta 
 - **Google Fonts** - Inter & Plus Jakarta Sans
 
 ### Backend
+
 - **PHP 8.0+** - Linguagem server-side
 - **MySQL 8.0+** - Banco de dados relacional
 - **API REST** - Arquitetura de comunicação
 - **Sessions PHP** - Gerenciamento de autenticação
 
 ### Bibliotecas Futuras
+
 - **Chart.js** - Visualização de dados e gráficos de progresso
-- **ApexCharts** *(alternativa)* - Gráficos interativos avançados
+- **ApexCharts** _(alternativa)_ - Gráficos interativos avançados
 
 ### Design & UI/UX
+
 - **Excalidraw** - Wireframes e protótipos
 - **Design System Próprio** - Tokens CSS e componentes reutilizáveis
 - **Glassmorphism UI** - Efeito de vidro com backdrop-filter
 
 ### Ferramentas
+
 - **Git & GitHub** - Controle de versão
 - **XAMPP/MAMP** - Ambiente de desenvolvimento local
 - **VS Code** - Editor de código
@@ -79,6 +84,7 @@ Muitas pessoas têm dificuldade em manter hábitos consistentes devido à falta 
 ### ✨ Funcionalidades Atuais
 
 #### Homepage/Landing Page (index.php)
+
 - Apresentação visual do produto
 - Seção de serviços principais
 - Demonstração de interface de criação de hábitos
@@ -87,6 +93,7 @@ Muitas pessoas têm dificuldade em manter hábitos consistentes devido à falta 
 - Footer com links e redes sociais
 
 #### Design System Completo
+
 - Sistema de cores e tipografia consistente
 - Componentes reutilizáveis (botões, cards, inputs)
 - Efeitos glassmorphism personalizados
@@ -96,13 +103,15 @@ Muitas pessoas têm dificuldade em manter hábitos consistentes devido à falta 
 ### 🚧 Em Desenvolvimento
 
 1. **Sistema de Autenticação**
-   - Página de login (login.php) - *em construção*
-   - Página de cadastro (register.php) - *em construção*
+
+   - Página de login (login.php) - _em construção_
+   - Página de cadastro (register.php) - _em construção_
    - Validação de formulários
    - Sistema de sessões seguro
 
 2. **Dashboard Interativo**
-   - Página principal do usuário (dashboard.php) - *planejado*
+
+   - Página principal do usuário (dashboard.php) - _planejado_
    - Estatísticas em tempo real:
      - Total de hábitos ativos
      - Taxa de conclusão diária
@@ -110,14 +119,15 @@ Muitas pessoas têm dificuldade em manter hábitos consistentes devido à falta 
    - Cards de métricas visuais
 
 3. **Gerenciamento de Hábitos**
-   - Página de hábitos (habits.php) - *planejado*
+
+   - Página de hábitos (habits.php) - _planejado_
    - CRUD completo (Create, Read, Update, Delete)
    - Marcação de hábitos concluídos
    - Organização por categorias
    - Filtros por horário (manhã, tarde, noite)
 
 4. **Histórico de Progresso**
-   - Página de histórico (history.php) - *planejado*
+   - Página de histórico (history.php) - _planejado_
    - Visualização de progresso ao longo do tempo
    - Gráficos com Chart.js
 
@@ -191,24 +201,28 @@ Homepage (index.php)
 ### Passo a Passo
 
 1. **Clone o repositório**
+
 ```bash
 git clone https://github.com/dedeusgui/ProjetoFullstack.git
 cd ProjetoFullstack
 ```
 
 2. **Configure o servidor local**
+
 ```bash
 # Mova o projeto para a pasta do seu servidor local
 # XAMPP: C:/xampp/htdocs/
 # MAMP: /Applications/MAMP/htdocs/
 ```
 
-3. **Configure o banco de dados** *(em breve)*
+3. **Configure o banco de dados** _(em breve)_
+
 ```bash
 # As instruções serão adicionadas quando o schema estiver completo
 ```
 
 4. **Acesse a aplicação**
+
 ```
 http://localhost/ProjetoFullstack/public/
 ```
@@ -355,6 +369,7 @@ Todos os componentes são 100% responsivos e otimizados para todos os dispositiv
 ## 🗺 Roadmap
 
 ### Fase 1: Foundation ✅ (Concluída)
+
 - [x] Estrutura básica do projeto
 - [x] Design System completo
 - [x] Homepage/Landing page
@@ -362,6 +377,7 @@ Todos os componentes são 100% responsivos e otimizados para todos os dispositiv
 - [x] Wireframes e protótipos
 
 ### Fase 2: Autenticação 🚧 (Em Andamento)
+
 - [ ] Página de login funcional
 - [ ] Página de registro funcional
 - [ ] Sistema de validação de formulários
@@ -370,6 +386,7 @@ Todos os componentes são 100% responsivos e otimizados para todos os dispositiv
 - [ ] Middleware de autenticação
 
 ### Fase 3: Core Features 📋 (Próxima)
+
 - [ ] Dashboard com estatísticas
 - [ ] CRUD de hábitos completo
 - [ ] Sistema de marcação de conclusão
@@ -377,18 +394,21 @@ Todos os componentes são 100% responsivos e otimizados para todos os dispositiv
 - [ ] Integração das APIs REST
 
 ### Fase 4: Data Visualization 📋
+
 - [ ] Implementação Chart.js
 - [ ] Gráficos de progresso
 - [ ] Calendário de hábitos
 - [ ] Exportação de dados
 
 ### Fase 5: Enhancement 📋
+
 - [ ] Sistema de notificações
 - [ ] Gamificação
 - [ ] Modo escuro
 - [ ] PWA (Progressive Web App)
 
 ### Fase 6: Deploy 📋
+
 - [ ] Configuração de produção
 - [ ] Deploy do frontend
 - [ ] Deploy do backend
@@ -400,18 +420,22 @@ Todos os componentes são 100% responsivos e otimizados para todos os dispositiv
 ## 📸 Capturas de Tela
 
 ### Homepage - Acima da Dobra
+
 > Design moderno com glassmorphism e apresentação clara do produto
 
 ### Seção de Serviços
+
 > Cards apresentando as funcionalidades principais do Doitly
 
 ### Preview de Hábitos
+
 > Interface de exemplo mostrando como será o gerenciamento de hábitos
 
 ### Componentes UI
+
 > Showcase completo de todos os componentes do Design System
 
-*Screenshots serão adicionadas em breve*
+_Screenshots serão adicionadas em breve_
 
 ---
 
@@ -431,20 +455,20 @@ Todos os componentes são 100% responsivos e otimizados para todos os dispositiv
 ✅ Suporte a prefers-reduced-motion  
 ✅ Suporte a high-contrast mode  
 ✅ Componentes reutilizáveis  
-✅ Separação de responsabilidades  
+✅ Separação de responsabilidades
 
 ---
 
 ## 👥 Equipe
 
 - **Guilherme Deus** - [@dedeusgui](https://github.com/dedeusgui) - Frontend & Design
-- **[Nome do Parceiro]** - [@username] - Backend & Database
+- **Ismael Gomes** - [@rex23js](https://github.com/rex23js) - Backend & Database
 
 ---
 
 ## 🎓 Contexto Acadêmico
 
-Este projeto está sendo desenvolvido como trabalho final da disciplina de Desenvolvimento Fullstack, com o objetivo de demonstrar conhecimentos em:
+Este projeto está sendo desenvolvido como trabalho da disciplina de Desenvolvimento Fullstack, com o objetivo de demonstrar conhecimentos em:
 
 ✅ Desenvolvimento Frontend responsivo com HTML/CSS/JavaScript  
 ✅ Design System e UI/UX moderno  
@@ -453,17 +477,19 @@ Este projeto está sendo desenvolvido como trabalho final da disciplina de Desen
 🚧 Autenticação e autorização  
 ✅ Boas práticas de código e organização  
 ✅ Versionamento com Git  
-✅ Documentação técnica completa  
+✅ Documentação técnica completa
 
 ### Requisitos do Projeto
 
 **Atendidos:**
+
 - ✅ Interface responsiva
 - ✅ Componentes reutilizáveis
 - ✅ Boa organização de código
 - ✅ Versionamento Git
 
 **Em Desenvolvimento:**
+
 - 🚧 Navegação entre páginas
 - 🚧 Consumo de APIs
 - 🚧 Formulários validados
@@ -482,7 +508,6 @@ Este projeto está sob a licença MIT. Veja o arquivo [LICENSE](LICENSE) para ma
 ## 🔗 Links Úteis
 
 - [Repositório no GitHub](https://github.com/dedeusgui/ProjetoFullstack)
-- [Wireframes no Excalidraw](link-do-excalidraw)
 - [Deploy (em breve)](#)
 
 ---
@@ -491,14 +516,33 @@ Este projeto está sob a licença MIT. Veja o arquivo [LICENSE](LICENSE) para ma
 
 Tem alguma dúvida ou sugestão? Entre em contato!
 
-- **Email:** contato@doitly.com *(exemplo)*
 - **GitHub:** [@dedeusgui](https://github.com/dedeusgui)
+- **GitHub:** [@rex23js](https://github.com/rex23js)
 
 ---
 
 <div align="center">
   
   ### 🌟 Status do Projeto: Em Desenvolvimento Ativo
+  
+  <table align="center">
+    <tr>
+      <td align="center">
+        <img src="https://avatars.githubusercontent.com/u/200134059?v=4" width="96" alt="Ismael" />
+        <br/>
+        <sub><b>Ismael Gomes (Rex)</b></sub>
+        <br/>
+        <a href="https://github.com/rex23js">@rex23js</a>
+      </td>
+      <td align="center">
+        <img src="https://avatars.githubusercontent.com/u/202681712?v=4" width="96" alt="Guilherme" />
+        <br/>
+        <sub><b>Guilherme Deus</b></sub>
+        <br/>
+        <a href="https://github.com/dedeusgui">@dedeusgui</a>
+      </td>
+    </tr>
+  </table>
   
   Feito com 💙 por Guilherme Deus e equipe
   
