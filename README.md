@@ -1,7 +1,7 @@
 # Doitly - Gerenciador de Hábitos Diários
 
 <div align="center">
-  <img src="public/assets/img/logo.png" alt="Doitly Logo" width="120"/>
+  <img src="C:\xampp\htdocs\ProjetoFullstack\public\assets\img\logo.png" alt="Doitly Logo" width="120"/>
   
   ### Transforme seus objetivos em hábitos consistentes
   
@@ -525,29 +525,8 @@ Tem alguma dúvida ou sugestão? Entre em contato!
   
   ### 🌟 Status do Projeto: Em Desenvolvimento Ativo
   
-  <table align="center">
-    <tr>
-      <td align="center">
-        <img src="https://avatars.githubusercontent.com/u/200134059?v=4" width="96" alt="Ismael" />
-        <br/>
-        <sub><b>Ismael Gomes (Rex)</b></sub>
-        <br/>
-        <a href="https://github.com/rex23js">@rex23js</a>
-      </td>
-      <td align="center">
-        <img src="https://avatars.githubusercontent.com/u/202681712?v=4" width="96" alt="Guilherme" />
-        <br/>
-        <sub><b>Guilherme Deus</b></sub>
-        <br/>
-        <a href="https://github.com/dedeusgui">@dedeusgui</a>
-      </td>
-    </tr>
-  </table>
-  
   Feito com 💙 por Guilherme Deus e equipe
   
   ⭐ Deixe uma estrela se este projeto te interessou!
   
 </div>
-
-
